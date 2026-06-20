@@ -6,14 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.5.2",
-    "vite": "^8.0.12"
+    "@vitejs/plugin-react": "^6.0.2",
+    "vite": "^8.0.16"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
+    "express": "^5.2.1",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.21.0",
     "react": "^19.1.0",
