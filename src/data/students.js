@@ -1,0 +1,105 @@
+export const currentUser = {
+  id: 'u1',
+  name: 'Anna Müller',
+  email: 'anna.mueller@tum.de',
+  initials: 'AM',
+  university: 'TU Munich',
+  program: 'Electrical Engineering & Information Technology',
+  degree: 'Master',
+  semester: 4,
+  expectedGraduation: '2027',
+  location: 'Munich, Germany',
+  bio: 'Passionate about embedded systems and IoT. Currently working on my thesis about low-power sensor networks.',
+  skills: ['Embedded Systems', 'PCB Design', 'C/C++', 'Python', 'IoT', 'Signal Processing'],
+  interests: ['Embedded Systems', 'IoT', 'Power Electronics', 'Automotive'],
+  careerGoals: ['Thesis', 'Full-time'],
+  preferredLocations: ['Munich', 'Stuttgart', 'Remote'],
+  points: 847,
+  tier: 'Expert',
+  tierIcon: '🏆',
+  streak: 12,
+  badges: ['b1', 'b2', 'b5', 'b7', 'b10'],
+  eventsAttended: ['e1', 'e3', 'e5'],
+  savedOpportunities: ['o2', 'o5', 'o8'],
+  joinedDate: '2025-09-15',
+  profileCompletion: 92,
+  weeklyPoints: 45,
+  totalPosts: 34,
+  totalHelpful: 12,
+  quizzesPassed: 5,
+};
+
+export const students = [
+  currentUser,
+  {
+    id: 'u2', name: 'Lukas Weber', initials: 'LW', university: 'KIT', program: 'Mechatronics',
+    degree: 'Bachelor', semester: 6, points: 1243, tier: 'Master', tierIcon: '💎',
+    streak: 28, skills: ['Robotics', 'CAD', 'MATLAB'], interests: ['Robotics', 'Automotive'],
+  },
+  {
+    id: 'u3', name: 'Sofia Chen', initials: 'SC', university: 'RWTH Aachen', program: 'Computer Engineering',
+    degree: 'Master', semester: 3, points: 623, tier: 'Expert', tierIcon: '🏆',
+    streak: 7, skills: ['FPGA', 'VHDL', 'SystemVerilog'], interests: ['Embedded Systems', 'AI/ML'],
+  },
+  {
+    id: 'u4', name: 'Max Fischer', initials: 'MF', university: 'TU Darmstadt', program: 'Electrical Engineering',
+    degree: 'Bachelor', semester: 4, points: 312, tier: 'Contributor', tierIcon: '⚡',
+    streak: 3, skills: ['Circuit Design', 'LTSpice', 'Arduino'], interests: ['Power Electronics'],
+  },
+  {
+    id: 'u5', name: 'Elena Petrova', initials: 'EP', university: 'ETH Zürich', program: 'Robotics',
+    degree: 'PhD', semester: 2, points: 2890, tier: 'Grandmaster', tierIcon: '👑',
+    streak: 45, skills: ['ROS', 'Python', 'Deep Learning', 'Embedded Linux'], interests: ['Robotics', 'AI/ML'],
+  },
+  {
+    id: 'u6', name: 'Jonas Schmidt', initials: 'JS', university: 'TU Munich', program: 'Information Systems',
+    degree: 'Master', semester: 2, points: 178, tier: 'Explorer', tierIcon: '🔍',
+    streak: 5, skills: ['Python', 'Data Analysis', 'SQL'], interests: ['Data Science'],
+  },
+  {
+    id: 'u7', name: 'Aisha Patel', initials: 'AP', university: 'Uni Stuttgart', program: 'Automotive Engineering',
+    degree: 'Master', semester: 3, points: 956, tier: 'Expert', tierIcon: '🏆',
+    streak: 15, skills: ['AUTOSAR', 'CAN Bus', 'Embedded C'], interests: ['Automotive', 'Embedded Systems'],
+  },
+  {
+    id: 'u8', name: 'Felix Braun', initials: 'FB', university: 'KIT', program: 'Electrical Engineering',
+    degree: 'Bachelor', semester: 2, points: 45, tier: 'Novice', tierIcon: '🌱',
+    streak: 1, skills: ['Basics', 'Arduino'], interests: ['IoT', 'Maker Projects'],
+  },
+  {
+    id: 'u9', name: 'Marie Dubois', initials: 'MD', university: 'TU Berlin', program: 'Renewable Energy Systems',
+    degree: 'Master', semester: 4, points: 534, tier: 'Expert', tierIcon: '🏆',
+    streak: 9, skills: ['Power Electronics', 'Solar Systems', 'MATLAB'], interests: ['Renewable Energy', 'Power Electronics'],
+  },
+  {
+    id: 'u10', name: 'Raj Sharma', initials: 'RS', university: 'RWTH Aachen', program: 'Computer Science',
+    degree: 'Master', semester: 1, points: 89, tier: 'Explorer', tierIcon: '🔍',
+    streak: 4, skills: ['Machine Learning', 'Python', 'TensorFlow'], interests: ['AI/ML', 'Data Science'],
+  },
+];
+
+export const tiers = [
+  { name: 'Novice', icon: '🌱', minPoints: 0, maxPoints: 49, color: '#6B7280' },
+  { name: 'Explorer', icon: '🔍', minPoints: 50, maxPoints: 199, color: '#009EE0' },
+  { name: 'Contributor', icon: '⚡', minPoints: 200, maxPoints: 499, color: '#B9C900' },
+  { name: 'Expert', icon: '🏆', minPoints: 500, maxPoints: 999, color: '#F59E0B' },
+  { name: 'Master', icon: '💎', minPoints: 1000, maxPoints: 2499, color: '#CC0000' },
+  { name: 'Grandmaster', icon: '👑', minPoints: 2500, maxPoints: Infinity, color: '#7C3AED' },
+];
+
+export const pointActions = [
+  { action: 'Daily login (streak)', points: 2, icon: '🔥' },
+  { action: 'Post a message', points: 1, icon: '💬' },
+  { action: 'Receive upvote', points: 2, icon: '👍' },
+  { action: 'Helpful answer', points: 5, icon: '✅' },
+  { action: 'Complete skill quiz', points: 10, icon: '📝' },
+  { action: 'Score 80%+', points: 5, icon: '⭐' },
+  { action: 'Attend event', points: 15, icon: '🎪' },
+  { action: 'Submit project', points: 20, icon: '🚀' },
+  { action: 'Win challenge', points: 50, icon: '🏅' },
+  { action: 'Refer a friend', points: 10, icon: '🤝' },
+  { action: 'Write blog/tutorial', points: 25, icon: '📖' },
+  { action: 'Receive star on project', points: 3, icon: '⭐' },
+  { action: 'Comment on post', points: 1, icon: '💭' },
+  { action: 'Complete profile 100%', points: 20, icon: '✨' },
+];
