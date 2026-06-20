@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { channelCategories, messages, feedHighlights } from '../data/channels';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
 import { Hash, ChevronDown, ChevronRight, Pin, Send, SmilePlus, MessageSquare, Users, Eye, EyeOff, Trophy, Calendar, BookOpen, Megaphone } from 'lucide-react';
+import { staggerContainer, fadeUpVariant, listStagger, listItemFade } from '../utils/animations';
 
 export default function Community() {
   const { user } = useAuth();
@@ -65,44 +67,60 @@ export default function Community() {
   const feedTypeIcons = { challenge: Trophy, announcement: Megaphone, leaderboard: Trophy, event: Calendar, blog: BookOpen };
 
   return (
-    <div className="animate-fade-in">
+    <motion.div className="animate-fade-in" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="community-layout">
         {/* Channel Sidebar */}
         <div className="channel-sidebar">
           <div style={{ marginBottom: 'var(--space-4)' }}>
-            <button className={`channel-item ${showFeed ? 'active' : ''}`} style={{ fontWeight: 600, width: '100%' }} onClick={() => setShowFeed(true)}>
-              <Megaphone size={16} /> Feed & Highlights
-            </button>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className={`channel-item ${showFeed ? 'active' : ''}`} style={{ fontWeight: 600, width: '100%', position: 'relative' }} onClick={() => setShowFeed(true)}>
+              {showFeed && (
+                <div style={{ position: 'absolute', inset: 0, background: 'var(--we-gray-100)', borderRadius: 'var(--radius-md)', zIndex: 0 }} />
+              )}
+              <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}><Megaphone size={16} /> Feed & Highlights</span>
+            </motion.button>
           </div>
 
           {channelCategories.map(cat => (
             <div key={cat.name} className="channel-category">
               <div className="channel-category-title" onClick={() => toggleCategory(cat.name)}>
-                {collapsedCategories.has(cat.name) ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                <motion.div animate={{ rotate: collapsedCategories.has(cat.name) ? -90 : 0 }} transition={{ duration: 0.2 }} style={{ display: 'flex' }}>
+                  <ChevronDown size={12} />
+                </motion.div>
                 {cat.name}
               </div>
-              {!collapsedCategories.has(cat.name) && cat.channels.map(ch => (
-                <div key={ch.id} className={`channel-item ${activeChannel === ch.id && !showFeed ? 'active' : ''}`} onClick={() => { setActiveChannel(ch.id); setShowFeed(false); }}>
-                  <span className="channel-hash">{ch.icon}</span>
-                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
-                </div>
-              ))}
+              <AnimatePresence>
+                {!collapsedCategories.has(cat.name) && (
+                  <motion.div key={cat.name} initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
+                    {cat.channels.map(ch => (
+                      <motion.div whileHover={{ x: 2 }} key={ch.id} className={`channel-item ${activeChannel === ch.id && !showFeed ? 'active' : ''}`} style={{ position: 'relative' }} onClick={() => { setActiveChannel(ch.id); setShowFeed(false); }}>
+                        {activeChannel === ch.id && !showFeed && (
+                          <div style={{ position: 'absolute', inset: 0, background: 'var(--we-gray-100)', borderRadius: 'var(--radius-md)', zIndex: 0 }} />
+                        )}
+                        <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                          <span className="channel-hash">{ch.icon}</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
+                        </span>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
 
         {/* Main Chat Area */}
         {showFeed ? (
-          <div className="chat-area" style={{ overflow: 'auto', padding: 'var(--space-6)' }}>
+          <motion.div key="feed" className="chat-area" style={{ overflow: 'auto', padding: 'var(--space-6)' }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <h2 style={{ marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
               <Megaphone size={24} /> Community Feed
             </h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <motion.div variants={staggerContainer} initial="hidden" animate="show" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               {feedHighlights.map((item, i) => {
                 const Icon = feedTypeIcons[item.type] || Megaphone;
                 return (
-                  <div key={i} className="card card-elevated" style={{ padding: 'var(--space-5)' }}>
+                  <motion.div key={i} variants={fadeUpVariant} className="card card-elevated" style={{ padding: 'var(--space-5)' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
                       <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', background: 'var(--we-rot-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--we-rot)' }}>
                         <Icon size={20} />
@@ -123,11 +141,11 @@ export default function Community() {
                         {item.participants && <span className="badge badge-cyan" style={{ marginTop: 'var(--space-2)' }}>{item.participants} participants</span>}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         ) : (
           <div className="chat-area">
             {/* Chat Header */}
@@ -148,17 +166,17 @@ export default function Community() {
               </div>
             </div>
 
-            {/* Messages */}
             <div className="chat-messages">
-              {channelMessages.length === 0 && (
-                <div className="empty-state">
-                  <MessageSquare size={48} />
-                  <h4>No messages yet</h4>
-                  <p>Be the first to start a conversation in this channel!</p>
-                </div>
-              )}
-              {channelMessages.map(msg => (
-                <div key={msg.id} className="chat-message">
+              <AnimatePresence initial={false}>
+                {channelMessages.length === 0 && (
+                  <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="empty-state">
+                    <MessageSquare size={48} />
+                    <h4>No messages yet</h4>
+                    <p>Be the first to start a conversation in this channel!</p>
+                  </motion.div>
+                )}
+                {channelMessages.map(msg => (
+                  <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="chat-message">
                   <div className={`avatar avatar-sm`} style={{ background: msg.isAnnouncement ? 'var(--we-gradient-brand)' : msg.userId === 'anon' ? 'var(--we-gray-400)' : undefined }}>
                     {msg.userInitials}
                   </div>
@@ -189,8 +207,9 @@ export default function Community() {
                       </button>
                     )}
                   </div>
-                </div>
+                </motion.div>
               ))}
+              </AnimatePresence>
             </div>
 
             {/* Chat Input */}
@@ -217,7 +236,7 @@ export default function Community() {
 
         {/* Channel Info Sidebar */}
         {!showFeed && (
-          <div className="channel-info-sidebar">
+          <motion.div className="channel-info-sidebar" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
             <h4 style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>About</h4>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)', marginBottom: 'var(--space-5)' }}>
               {activeChannelData?.description}
@@ -242,9 +261,9 @@ export default function Community() {
                 <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{m.content}</div>
               </div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

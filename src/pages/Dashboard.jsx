@@ -5,7 +5,10 @@ import { events } from '../data/events';
 import { mentors } from '../data/mentors';
 import { leaderboardData, dailySnippet } from '../data/content';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Briefcase, Calendar, MessageCircle, Users, TrendingUp, Zap, ChevronRight, Clock, MapPin, Star, Flame, BookOpen, Trophy, Award } from 'lucide-react';
+import { staggerContainer, fadeUpVariant, hoverCard, tapButton } from '../utils/animations';
+import AnimatedNumber from '../components/AnimatedNumber';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -24,9 +27,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <motion.div className="animate-fade-in" variants={staggerContainer} initial="hidden" animate="show">
       {/* Welcome Banner */}
-      <div className="welcome-banner" style={{ marginBottom: 'var(--space-8)' }}>
+      <motion.div className="welcome-banner" variants={fadeUpVariant} style={{ marginBottom: 'var(--space-8)' }}>
         <h2>Hi {user?.name?.split(' ')[0]} 👋</h2>
         <p>Based on your interest in <strong>{user?.interests?.slice(0, 2).join(' & ')}</strong>, we found <strong>{topOpportunities.length} new opportunities</strong> and <strong>{upcomingEvents.length} upcoming events</strong> for you.</p>
         <div style={{ display: 'flex', gap: 'var(--space-4)', marginTop: 'var(--space-5)' }}>
@@ -37,25 +40,25 @@ export default function Dashboard() {
             Browse Events
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats Row */}
-      <div className="grid-4" style={{ marginBottom: 'var(--space-8)' }}>
-        <div className="stat-card">
+      <motion.div className="grid-4" variants={staggerContainer} style={{ marginBottom: 'var(--space-8)' }}>
+        <motion.div className="stat-card" variants={fadeUpVariant} whileHover={hoverCard.hover}>
           <div className="stat-icon" style={{ background: 'var(--we-rot-bg)', color: 'var(--we-rot)' }}>
             <Zap size={20} />
           </div>
-          <div className="stat-value">{points}</div>
+          <div className="stat-value"><AnimatedNumber value={points} /></div>
           <div className="stat-label">Total Points <span className="points-delta positive">+{weeklyPoints} this week</span></div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div className="stat-card" variants={fadeUpVariant} whileHover={hoverCard.hover}>
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #FF6B35, #F7931E)', color: 'white' }}>
             <Flame size={20} />
           </div>
-          <div className="stat-value">{streak}</div>
+          <div className="stat-value"><AnimatedNumber value={streak} /></div>
           <div className="stat-label">Day Streak 🔥</div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div className="stat-card" variants={fadeUpVariant} whileHover={hoverCard.hover}>
           <div className="stat-icon" style={{ background: 'var(--we-cyan-light)', color: 'var(--we-cyan)' }}>
             <Trophy size={20} />
           </div>
@@ -64,21 +67,26 @@ export default function Dashboard() {
             {nextTier && (
               <>
                 <div className="progress-bar" style={{ height: 6 }}>
-                  <div className="progress-bar-fill" style={{ width: `${((points - (nextTier.threshold - (nextTier.threshold <= 200 ? 50 : nextTier.threshold <= 500 ? 200 : nextTier.threshold <= 1000 ? 500 : 1000))) / (nextTier.threshold - (nextTier.threshold <= 200 ? 50 : nextTier.threshold <= 500 ? 200 : nextTier.threshold <= 1000 ? 500 : 1000))) * 100}%` }} />
+                  <motion.div 
+                    className="progress-bar-fill" 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((points - (nextTier.threshold - (nextTier.threshold <= 200 ? 50 : nextTier.threshold <= 500 ? 200 : nextTier.threshold <= 1000 ? 500 : 1000))) / (nextTier.threshold - (nextTier.threshold <= 200 ? 50 : nextTier.threshold <= 500 ? 200 : nextTier.threshold <= 1000 ? 500 : 1000))) * 100}%` }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                  />
                 </div>
                 <div className="stat-label" style={{ marginTop: 4 }}>{nextTier.remaining} pts to next tier</div>
               </>
             )}
           </div>
-        </div>
-        <div className="stat-card">
+        </motion.div>
+        <motion.div className="stat-card" variants={fadeUpVariant} whileHover={hoverCard.hover}>
           <div className="stat-icon" style={{ background: 'var(--we-green-light)', color: 'var(--we-green-dark)' }}>
             <Star size={20} />
           </div>
-          <div className="stat-value">{user?.badges?.length || 0}</div>
+          <div className="stat-value"><AnimatedNumber value={user?.badges?.length || 0} /></div>
           <div className="stat-label">Badges Earned</div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       <div className="dashboard-grid">
         {/* Left Column */}
@@ -105,9 +113,9 @@ export default function Dashboard() {
                 View All <ChevronRight size={14} />
               </Link>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <motion.div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} variants={staggerContainer} initial="hidden" animate="show">
               {topOpportunities.map(opp => (
-                <div key={opp.id} className="card card-elevated" style={{ padding: 'var(--space-4)' }}>
+                <motion.div key={opp.id} className="card card-elevated" style={{ padding: 'var(--space-4)' }} variants={fadeUpVariant} whileHover={hoverCard.hover}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-2)' }}>
                     <span className={`badge ${opp.type === 'thesis' ? 'badge-red' : opp.type === 'internship' ? 'badge-cyan' : 'badge-green'}`}>
                       {opp.type.replace('-', ' ')}
@@ -127,9 +135,9 @@ export default function Dashboard() {
                       {daysUntil(opp.deadline) <= 14 && ` (${daysUntil(opp.deadline)} days left)`}
                     </div>
                   )}
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           {/* Upcoming Events */}
@@ -142,9 +150,9 @@ export default function Dashboard() {
                 View All <ChevronRight size={14} />
               </Link>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <motion.div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} variants={staggerContainer} initial="hidden" animate="show">
               {upcomingEvents.map(evt => (
-                <div key={evt.id} className="card" style={{ padding: 'var(--space-4)', display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
+                <motion.div key={evt.id} className="card" style={{ padding: 'var(--space-4)', display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }} variants={fadeUpVariant} whileHover={hoverCard.hover}>
                   <div style={{ width: 50, height: 50, borderRadius: 'var(--radius-md)', background: 'var(--we-gradient-brand)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
                     <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, textTransform: 'uppercase' }}>{new Date(evt.date).toLocaleDateString('en-US', { month: 'short' })}</span>
                     <span style={{ fontSize: 'var(--text-lg)', fontWeight: 800, lineHeight: 1 }}>{new Date(evt.date).getDate()}</span>
@@ -157,18 +165,18 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <button className={`btn btn-sm ${evt.registered ? 'btn-secondary' : 'btn-primary'}`}>
-                    {evt.registered ? '✓ Registered' : 'Register'}
+                    {evt.registered ? 'Registered' : 'Register'}
                   </button>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Right Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
           {/* Weekly Leaderboard */}
-          <div className="card">
+          <motion.div className="card" variants={fadeUpVariant}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
               <h4 style={{ fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <Trophy size={18} /> Weekly Top 5
@@ -177,26 +185,28 @@ export default function Dashboard() {
                 Full Board <ChevronRight size={12} />
               </Link>
             </div>
-            {top5.map((entry, i) => (
-              <div key={entry.userId} className={`leaderboard-row ${entry.userId === 'u1' ? 'current-user' : ''}`} style={{ padding: 'var(--space-2) var(--space-3)' }}>
-                <span className={`leaderboard-rank ${i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : ''}`} style={{ width: 24, fontSize: 'var(--text-sm)' }}>
-                  {i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}
-                </span>
-                <div className="avatar avatar-sm">{entry.initials}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--we-black)' }}>{entry.name}</div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-500)' }}>{entry.university}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--we-black)' }}>{entry.points}</div>
-                  <div className="points-delta positive" style={{ fontSize: 'var(--text-xs)' }}>+{entry.weeklyDelta}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+            <motion.div variants={staggerContainer} initial="hidden" animate="show">
+              {top5.map((entry, i) => (
+                <motion.div key={entry.userId} className={`leaderboard-row ${entry.userId === 'u1' ? 'current-user' : ''}`} style={{ padding: 'var(--space-2) var(--space-3)' }} variants={fadeUpVariant} whileHover={{ x: 4, backgroundColor: 'var(--we-gray-50)' }}>
+                  <span className={`leaderboard-rank ${i === 0 ? 'top-1' : i === 1 ? 'top-2' : i === 2 ? 'top-3' : ''}`} style={{ width: 24, fontSize: 'var(--text-sm)' }}>
+                    {i < 3 ? ['🥇','🥈','🥉'][i] : i + 1}
+                  </span>
+                  <div className="avatar avatar-sm">{entry.initials}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--we-black)' }}>{entry.name}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-500)' }}>{entry.university}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--we-black)' }}>{entry.points}</div>
+                    <div className="points-delta positive" style={{ fontSize: 'var(--text-xs)' }}>+{entry.weeklyDelta}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
 
           {/* Suggested Mentors */}
-          <div className="card">
+          <motion.div className="card" variants={fadeUpVariant}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
               <h4 style={{ fontSize: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <Users size={18} /> Suggested Mentors
@@ -205,27 +215,29 @@ export default function Dashboard() {
                 All Mentors <ChevronRight size={12} />
               </Link>
             </div>
-            {topMentors.map(m => (
-              <div key={m.id} style={{ display: 'flex', gap: 'var(--space-3)', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--we-gray-100)' }}>
-                <div className="avatar">{m.initials}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{m.name}</div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-500)' }}>{m.role}</div>
-                  <div style={{ display: 'flex', gap: 'var(--space-1)', marginTop: 'var(--space-1)', flexWrap: 'wrap' }}>
-                    {m.expertise.slice(0, 2).map(e => (
-                      <span key={e} className="badge badge-gray" style={{ fontSize: 10 }}>{e}</span>
-                    ))}
+            <motion.div variants={staggerContainer} initial="hidden" animate="show">
+              {topMentors.map(m => (
+                <motion.div key={m.id} style={{ display: 'flex', gap: 'var(--space-3)', padding: 'var(--space-3) 0', borderBottom: '1px solid var(--we-gray-100)' }} variants={fadeUpVariant} whileHover={{ x: 4 }}>
+                  <div className="avatar">{m.initials}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{m.name}</div>
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-500)' }}>{m.role}</div>
+                    <div style={{ display: 'flex', gap: 'var(--space-1)', marginTop: 'var(--space-1)', flexWrap: 'wrap' }}>
+                      {m.expertise.slice(0, 2).map(e => (
+                        <span key={e} className="badge badge-gray" style={{ fontSize: 10 }}>{e}</span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <span className="mentor-match-score match-high" style={{ alignSelf: 'flex-start' }}>
-                  {m.matchScore}%
-                </span>
-              </div>
-            ))}
-          </div>
+                  <span className="mentor-match-score match-high" style={{ alignSelf: 'flex-start' }}>
+                    {m.matchScore}%
+                  </span>
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
 
           {/* Quick Actions */}
-          <div className="card" style={{ background: 'var(--we-gray-100)' }}>
+          <motion.div className="card" style={{ background: 'var(--we-gray-100)' }} variants={fadeUpVariant}>
             <h4 style={{ fontSize: 'var(--text-base)', marginBottom: 'var(--space-4)' }}>Quick Actions</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <Link to="/skills" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
@@ -238,9 +250,9 @@ export default function Dashboard() {
                 <TrendingUp size={16} /> AI Career Companion
               </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

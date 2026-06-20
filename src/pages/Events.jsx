@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { events, eventCategories } from '../data/events';
 import { Calendar as CalIcon, MapPin, Clock, Users, Video, ChevronLeft, ChevronRight, X, Check } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function Events() {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -10,10 +12,18 @@ export default function Events() {
 
   const filtered = events.filter(e => activeCategory === 'all' || e.category === activeCategory);
 
+  const { addToast } = useToast();
+
   const toggleRegister = (id) => {
     setRegisteredIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        addToast('You have unregistered from this event.', 'info');
+      } else {
+        next.add(id);
+        addToast('Successfully registered for the event!', 'success');
+      }
       return next;
     });
   };
@@ -54,45 +64,76 @@ export default function Events() {
         </div>
       </div>
 
-      <div className="filter-pills" style={{ marginBottom: 'var(--space-6)' }}>
+      <div className="filter-pills" style={{ marginBottom: 'var(--space-6)', display: 'flex', gap: 'var(--space-2)' }}>
         {eventCategories.map(c => (
-          <button key={c.key} className={`chip ${activeCategory === c.key ? 'active' : ''}`} onClick={() => setActiveCategory(c.key)}>
-            {c.label}
+          <button 
+            key={c.key} 
+            className="chip" 
+            style={{ 
+              position: 'relative', 
+              background: activeCategory === c.key ? 'transparent' : 'var(--we-white)',
+              borderColor: activeCategory === c.key ? 'transparent' : 'var(--we-gray-200)',
+              color: activeCategory === c.key ? 'var(--we-rot)' : 'var(--we-gray-700)',
+              overflow: 'hidden'
+            }} 
+            onClick={() => setActiveCategory(c.key)}
+          >
+            {activeCategory === c.key && (
+              <motion.div
+                layoutId="activeEventFilterPill"
+                style={{ position: 'absolute', inset: 0, background: 'var(--we-rot-bg)', zIndex: 0, borderRadius: 'var(--radius-2xl)', border: '1px solid var(--we-rot)' }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+            <span style={{ position: 'relative', zIndex: 1 }}>{c.label}</span>
           </button>
         ))}
       </div>
 
       {view === 'list' ? (
-        <div className="grid-2">
-          {filtered.map(evt => (
-            <div key={evt.id} className="card card-elevated" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setSelectedEvent(evt)}>
-              <div style={{ height: 8, background: eventColors[evt.category] || 'var(--we-gray-300)' }} />
-              <div style={{ padding: 'var(--space-5)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
-                  <span className={`badge ${evt.isOnline ? 'badge-cyan' : 'badge-green'}`}>
-                    {evt.isOnline ? <><Video size={10} /> Online</> : 'In-Person'}
-                  </span>
-                  <span className="badge badge-gray">{evt.category.replace(/-/g, ' ')}</span>
+        <motion.div layout className="grid-2">
+          <AnimatePresence>
+            {filtered.map(evt => (
+              <motion.div 
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                whileHover={{ scale: 1.02, y: -4, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', borderColor: 'var(--we-gray-300)' }}
+                whileTap={{ scale: 0.98 }}
+                key={evt.id} 
+                className="card card-elevated" 
+                style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column' }} 
+                onClick={() => setSelectedEvent(evt)}
+              >
+                <div style={{ height: 8, background: eventColors[evt.category] || 'var(--we-gray-300)' }} />
+                <div style={{ padding: 'var(--space-5)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
+                    <span className={`badge ${evt.isOnline ? 'badge-cyan' : 'badge-green'}`}>
+                      {evt.isOnline ? <><Video size={10} /> Online</> : 'In-Person'}
+                    </span>
+                    <span className="badge badge-gray">{evt.category.replace(/-/g, ' ')}</span>
+                  </div>
+                  <h4 style={{ fontSize: 'var(--text-base)', marginBottom: 'var(--space-3)' }}>{evt.title}</h4>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)', marginBottom: 'var(--space-3)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {evt.description}
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)', marginBottom: 'var(--space-4)', flex: 1 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CalIcon size={14} /> {new Date(evt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {evt.time}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={14} /> {evt.location}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={14} /> {evt.attendees}{evt.maxAttendees ? `/${evt.maxAttendees}` : ''} attendees</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-4)' }}>
+                    {evt.tags.map(t => <span key={t} className="badge badge-gray">{t}</span>)}
+                  </div>
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className={`btn ${registeredIds.has(evt.id) ? 'btn-secondary' : 'btn-primary'}`} style={{ width: '100%', marginTop: 'auto' }} onClick={(e) => { e.stopPropagation(); toggleRegister(evt.id); }}>
+                    {registeredIds.has(evt.id) ? <><Check size={16} /> Registered</> : 'Register Now'}
+                  </motion.button>
                 </div>
-                <h4 style={{ fontSize: 'var(--text-base)', marginBottom: 'var(--space-3)' }}>{evt.title}</h4>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)', marginBottom: 'var(--space-3)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {evt.description}
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)', marginBottom: 'var(--space-4)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CalIcon size={14} /> {new Date(evt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {evt.time}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={14} /> {evt.location}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users size={14} /> {evt.attendees}{evt.maxAttendees ? `/${evt.maxAttendees}` : ''} attendees</span>
-                </div>
-                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-4)' }}>
-                  {evt.tags.map(t => <span key={t} className="badge badge-gray">{t}</span>)}
-                </div>
-                <button className={`btn ${registeredIds.has(evt.id) ? 'btn-secondary' : 'btn-primary'}`} style={{ width: '100%' }} onClick={(e) => { e.stopPropagation(); toggleRegister(evt.id); }}>
-                  {registeredIds.has(evt.id) ? <><Check size={16} /> Registered</> : 'Register Now'}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       ) : (
         /* Calendar View */
         <div className="card" style={{ padding: 'var(--space-6)' }}>
@@ -183,10 +224,10 @@ export default function Events() {
               )}
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary">Add to Calendar</button>
-              <button className={`btn ${registeredIds.has(selectedEvent.id) ? 'btn-secondary' : 'btn-primary'}`} onClick={() => toggleRegister(selectedEvent.id)}>
+              <button className="btn btn-secondary" onClick={() => addToast('Added to Calendar', 'info')}>Add to Calendar</button>
+              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`btn ${registeredIds.has(selectedEvent.id) ? 'btn-secondary' : 'btn-primary'}`} onClick={() => toggleRegister(selectedEvent.id)}>
                 {registeredIds.has(selectedEvent.id) ? <><Check size={16} /> Registered</> : 'Register Now'}
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>

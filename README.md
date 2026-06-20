@@ -1,68 +1,51 @@
-# WE-Connect: Würth Elektronik Student Platform
+# WE-Connect - Würth Elektronik Student Platform
 
-WE-Connect is a modern, responsive web application designed for students to explore opportunities, attend events, develop skills, and engage with the Würth Elektronik community.
+A modern, scalable web platform designed to keep students, educators, and Würth Elektronik connected. Built with React, Vite, and Framer Motion for a premium, animated user experience.
 
 ## 🚀 Features
-
-- **Dashboard**: Personalized AI-curated opportunities, events, and mentors based on your profile and interests.
-- **Opportunities Board**: Find internships, working student positions, and thesis topics with smart matching scores.
-- **Events Hub**: Calendar and list views for hackathons, workshops, and guest lectures.
-- **Community Chat**: Discord-style channels with reactions, threaded replies, and an anonymous posting mode.
-- **Skills & Quizzes**: Verify your technical skills with timed quizzes and earn professional badges.
-- **AI Career Companion**: Scripted AI chat to guide you through career paths and thesis preparation.
-- **Admin Dashboard**: Analytics suite for WE staff to track engagement, funnel conversions, and active members.
+- **Dashboard**: Track your progress, upcoming events, and recommended opportunities.
+- **Opportunities**: Find internships, working student roles, and thesis topics dynamically matched to your profile.
+- **Events**: Register for guest lectures, hackathons, and workshops with an integrated calendar view.
+- **Skills & Badges**: Take skill quizzes to earn verified WE-Connect badges.
+- **Community**: Real-time chat channels and community feed.
+- **AI Journey Companion**: Get personalized career guidance, CV reviews, and thesis recommendations.
+- **Admin & Student Dual Modes**: Instantly toggle between Student view and Admin view with a built-in Demo Switcher.
+- **Email Automation Builder**: A dedicated Admin tool with a visual, step-by-step campaign builder to schedule onboarding and follow-up emails.
 
 ## 🛠 Tech Stack
-
-- **React 19**
-- **Vite**
-- **React Router** for seamless navigation
-- **Chart.js** for admin analytics
-- **Lucide React** for beautiful icons
-- **CSS3** with a comprehensive custom variable design system
+- **Framework**: React 19 + Vite
+- **Routing**: React Router DOM
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Styling**: Vanilla CSS with modern tokens (Glassmorphism, CSS Variables)
 
 ## 💻 How to Run Locally
 
 ### Prerequisites
-
-Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
+- [Node.js](https://nodejs.org/en/) (v18 or higher recommended)
+- npm or yarn
 
 ### Installation
-
-1. **Clone the repository** (if you haven't already):
+1. Clone the repository (or download the source code).
+2. Open your terminal and navigate to the project directory:
    ```bash
-   git clone <repository-url>
    cd WurthE
    ```
-
-2. **Install dependencies**:
+3. Install the dependencies:
    ```bash
-   npm install --legacy-peer-deps
+   npm install
    ```
-
-3. **Start the development server**:
+4. Start the development server:
    ```bash
    npm run dev
    ```
+5. Open your browser and visit `http://localhost:5173` to view the app!
 
-4. **View the app**:
-   Open your browser and navigate to the URL provided in the terminal (usually `http://localhost:5173/`).
-
-### Building for Production
-
-To create a production build:
-```bash
-npm run build
-```
-
-To preview the production build locally:
-```bash
-npm run preview
-```
-
-## 🎨 Design System
-
-The application uses a custom CSS architecture (`src/index.css`) built around Würth Elektronik's brand guidelines:
-- **Primary Colors**: Würth Rot (`#CC0000`), Black, White
-- **Highlights**: Cyan (`#009EE0`), Grün (`#B9C900`)
-- **Typography**: Inter (UI), Outfit (Headings), JetBrains Mono (Technical)
+## 📱 Mobile Simulation (macOS only)
+If you're on a Mac with Xcode installed, you can preview the app on an iPhone simulator:
+1. Make sure your local server is running (`npm run dev`).
+2. Open a new terminal window and launch the simulator:
+   ```bash
+   open -a Simulator
+   ```
+3. Once the simulator opens, launch Safari inside it and go to `http://localhost:5173`.

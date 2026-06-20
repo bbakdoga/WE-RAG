@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
 import { badges } from '../data/badges';
 import { Send, Bot, User, Sparkles, Briefcase, BookOpen, FileText, Target, Map } from 'lucide-react';
+import { staggerContainer, fadeUpVariant, listStagger, listItemFade } from '../utils/animations';
+import AnimatedNumber from '../components/AnimatedNumber';
 
 const careerPaths = [
   { title: 'Hardware Development', icon: '🔧', desc: 'Design circuits, PCBs, and electronic modules for automotive and industrial applications.', match: 92 },
@@ -94,22 +97,42 @@ export default function Journey() {
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="page-header">
+    <motion.div className="animate-fade-in" initial="hidden" animate="show" variants={staggerContainer}>
+      <motion.div className="page-header" variants={fadeUpVariant}>
         <h1>My Journey</h1>
         <p>Track your progress and get AI-powered career guidance.</p>
-      </div>
+      </motion.div>
 
-      <div className="tabs">
-        <button className={`tab-item ${activeTab === 'companion' ? 'active' : ''}`} onClick={() => setActiveTab('companion')}>AI Career Companion</button>
-        <button className={`tab-item ${activeTab === 'progress' ? 'active' : ''}`} onClick={() => setActiveTab('progress')}>Journey Progress</button>
-      </div>
+      <motion.div className="tabs" variants={fadeUpVariant}>
+        {['companion', 'progress'].map(tab => (
+          <button 
+            key={tab} 
+            className={`tab-item ${activeTab === tab ? 'active' : ''}`} 
+            style={{ position: 'relative' }}
+            onClick={() => setActiveTab(tab)}
+          >
+            {activeTab === tab && (
+              <motion.div
+                layoutId="journeyTabIndicator"
+                style={{ position: 'absolute', bottom: -2, left: 0, right: 0, height: 2, background: 'var(--we-rot)' }}
+              />
+            )}
+            {tab === 'companion' ? 'AI Career Companion' : 'Journey Progress'}
+          </button>
+        ))}
+      </motion.div>
 
       {activeTab === 'companion' ? (
-        <div className="ai-chat-container">
+        <motion.div className="ai-chat-container" variants={fadeUpVariant} key="companion">
           <div className="ai-chat-messages">
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={`ai-message ${msg.role}`}>
+            <AnimatePresence initial={false}>
+              {chatMessages.map((msg, i) => (
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                  animate={{ opacity: 1, y: 0, scale: 1 }} 
+                  className={`ai-message ${msg.role}`}
+                >
                 {msg.role === 'bot' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
                     <Sparkles size={14} style={{ color: 'var(--we-rot)' }} />
@@ -126,17 +149,18 @@ export default function Journey() {
                     ))}
                   </div>
                 )}
-              </div>
-            ))}
-            {isTyping && (
-              <div className="ai-message bot">
+                </motion.div>
+              ))}
+              {isTyping && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="ai-message bot">
                 <div style={{ display: 'flex', gap: 4 }}>
                   <span style={{ animation: 'pulse 1s infinite', animationDelay: '0s' }}>●</span>
                   <span style={{ animation: 'pulse 1s infinite', animationDelay: '0.2s' }}>●</span>
                   <span style={{ animation: 'pulse 1s infinite', animationDelay: '0.4s' }}>●</span>
                 </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
 
@@ -155,32 +179,32 @@ export default function Journey() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       ) : (
         /* Journey Progress */
-        <div style={{ maxWidth: 700 }}>
-          <div className="card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }}>
+        <motion.div style={{ maxWidth: 700 }} key="progress" variants={staggerContainer} initial="hidden" animate="show" exit="hidden">
+          <motion.div className="card" style={{ padding: 'var(--space-6)', marginBottom: 'var(--space-6)' }} variants={fadeUpVariant}>
             <h3 style={{ marginBottom: 'var(--space-5)' }}>Your Journey at a Glance</h3>
             <div className="grid-3" style={{ gap: 'var(--space-4)' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2rem' }}>{tier.icon}</div>
                 <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>{tier.name}</div>
-                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}>{points} points</div>
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}><AnimatedNumber value={points} /> points</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2rem' }}>🔥</div>
-                <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>{streak} Days</div>
+                <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}><AnimatedNumber value={streak} /> Days</div>
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}>Current Streak</div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2rem' }}>🏅</div>
-                <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}>{earnedBadges.length}</div>
+                <div style={{ fontWeight: 700, fontSize: 'var(--text-lg)' }}><AnimatedNumber value={earnedBadges.length} /></div>
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}>Badges Earned</div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="card" style={{ padding: 'var(--space-6)' }}>
+          <motion.div className="card" style={{ padding: 'var(--space-6)' }} variants={listStagger} initial="hidden" animate="show">
             <h3 style={{ marginBottom: 'var(--space-5)' }}>Activity Timeline</h3>
             <div style={{ borderLeft: '2px solid var(--we-gray-200)', paddingLeft: 'var(--space-5)', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
               {[
@@ -192,16 +216,16 @@ export default function Journey() {
                 { date: 'Jun 10', title: 'Saved 3 thesis opportunities', icon: '📌', color: 'var(--we-cyan)' },
                 { date: 'Jun 5', title: 'Joined WE-Connect platform', icon: '🎉', color: 'var(--we-success)' },
               ].map((item, i) => (
-                <div key={i} style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: 'calc(-1 * var(--space-5) - 7px)', width: 12, height: 12, borderRadius: '50%', background: item.color, border: '2px solid white' }} />
+                <motion.div key={i} variants={listItemFade} style={{ position: 'relative' }}>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.1 }} style={{ position: 'absolute', left: 'calc(-1 * var(--space-5) - 7px)', width: 12, height: 12, borderRadius: '50%', background: item.color, border: '2px solid white' }} />
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-400)', marginBottom: 2 }}>{item.date}</div>
                   <div style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{item.icon} {item.title}</div>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

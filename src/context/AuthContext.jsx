@@ -1,6 +1,14 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { currentUser } from '../data/students';
 
+const adminUser = {
+  id: 'admin-1',
+  name: 'WE Admin Team',
+  initials: 'WE',
+  role: 'admin',
+  email: 'admin@we-online.com',
+};
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -10,16 +18,24 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((userData) => {
     setUser(userData || currentUser);
+    setIsAdmin(false);
     setIsLoggedIn(true);
   }, []);
 
   const logout = useCallback(() => {
     setIsLoggedIn(false);
     setUser(null);
+    setIsAdmin(false);
   }, []);
 
-  const toggleAdmin = useCallback(() => {
-    setIsAdmin(prev => !prev);
+  const switchDemoRole = useCallback((role) => {
+    if (role === 'admin') {
+      setIsAdmin(true);
+      setUser(adminUser);
+    } else {
+      setIsAdmin(false);
+      setUser(currentUser);
+    }
   }, []);
 
   const updateProfile = useCallback((updates) => {
@@ -27,7 +43,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, isLoggedIn, login, logout, toggleAdmin, updateProfile }}>
+    <AuthContext.Provider value={{ user, isAdmin, isLoggedIn, login, logout, switchDemoRole, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

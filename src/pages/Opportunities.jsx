@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { opportunities, opportunityTypes } from '../data/opportunities';
 import { MapPin, Clock, Calendar, Bookmark, BookmarkCheck, ExternalLink, ChevronDown, Filter, X, Search } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 export default function Opportunities() {
   const [activeType, setActiveType] = useState('all');
@@ -14,10 +16,18 @@ export default function Opportunities() {
     return true;
   }).sort((a, b) => b.matchScore - a.matchScore);
 
+  const { addToast } = useToast();
+
   const toggleSave = (id) => {
     setSavedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        addToast('Opportunity removed from saved list.', 'info');
+      } else {
+        next.add(id);
+        addToast('Opportunity saved!', 'success');
+      }
       return next;
     });
   };
@@ -47,10 +57,28 @@ export default function Opportunities() {
           <input className="form-input" style={{ paddingLeft: 40, height: 40, borderRadius: 'var(--radius-full)' }} placeholder="Search opportunities..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
         </div>
       </div>
-      <div className="filter-pills" style={{ marginBottom: 'var(--space-6)' }}>
+      <div className="filter-pills" style={{ marginBottom: 'var(--space-6)', display: 'flex', gap: 'var(--space-2)' }}>
         {opportunityTypes.map(t => (
-          <button key={t.key} className={`chip ${activeType === t.key ? 'active' : ''}`} onClick={() => setActiveType(t.key)}>
-            {t.label}
+          <button 
+            key={t.key} 
+            className="chip" 
+            style={{ 
+              position: 'relative', 
+              background: activeType === t.key ? 'transparent' : 'var(--we-white)',
+              borderColor: activeType === t.key ? 'transparent' : 'var(--we-gray-200)',
+              color: activeType === t.key ? 'var(--we-rot)' : 'var(--we-gray-700)',
+              overflow: 'hidden'
+            }} 
+            onClick={() => setActiveType(t.key)}
+          >
+            {activeType === t.key && (
+              <motion.div
+                layoutId="activeFilterPill"
+                style={{ position: 'absolute', inset: 0, background: 'var(--we-rot-bg)', zIndex: 0, borderRadius: 'var(--radius-2xl)', border: '1px solid var(--we-rot)' }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            )}
+            <span style={{ position: 'relative', zIndex: 1 }}>{t.label}</span>
           </button>
         ))}
       </div>
@@ -60,45 +88,58 @@ export default function Opportunities() {
       </div>
 
       {/* Opportunity List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-        {filtered.map(opp => (
-          <div key={opp.id} className="card card-elevated" style={{ padding: 'var(--space-5)', cursor: 'pointer' }} onClick={() => setSelectedOpp(opp)}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
-              <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                <span className={`badge ${getTypeColor(opp.type)}`}>{opp.type.replace(/-/g, ' ')}</span>
-                {opp.tags.slice(0, 2).map(tag => (
-                  <span key={tag} className="badge badge-gray">{tag}</span>
-                ))}
+      <motion.div layout style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <AnimatePresence>
+          {filtered.map(opp => (
+            <motion.div 
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+              whileHover={{ scale: 1.01, y: -2, boxShadow: '0 8px 24px rgba(0,0,0,0.06)', borderColor: 'var(--we-gray-300)' }}
+              whileTap={{ scale: 0.99 }}
+              key={opp.id} 
+              className="card card-elevated" 
+              style={{ padding: 'var(--space-5)', cursor: 'pointer' }} 
+              onClick={() => setSelectedOpp(opp)}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                  <span className={`badge ${getTypeColor(opp.type)}`}>{opp.type.replace(/-/g, ' ')}</span>
+                  {opp.tags.slice(0, 2).map(tag => (
+                    <span key={tag} className="badge badge-gray">{tag}</span>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 'var(--text-sm)', color: opp.matchScore >= 90 ? 'var(--we-success)' : opp.matchScore >= 75 ? '#B45309' : 'var(--we-gray-500)', background: opp.matchScore >= 90 ? 'var(--we-success-bg)' : opp.matchScore >= 75 ? 'var(--we-warning-bg)' : 'var(--we-gray-100)', padding: '4px 10px', borderRadius: 'var(--radius-full)' }}>
+                    {opp.matchScore}% match
+                  </span>
+                  <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="btn btn-icon btn-ghost" onClick={(e) => { e.stopPropagation(); toggleSave(opp.id); }}>
+                    {savedIds.has(opp.id) ? <BookmarkCheck size={20} style={{ color: 'var(--we-rot)' }} /> : <Bookmark size={20} />}
+                  </motion.button>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 'var(--text-sm)', color: opp.matchScore >= 90 ? 'var(--we-success)' : opp.matchScore >= 75 ? '#B45309' : 'var(--we-gray-500)', background: opp.matchScore >= 90 ? 'var(--we-success-bg)' : opp.matchScore >= 75 ? 'var(--we-warning-bg)' : 'var(--we-gray-100)', padding: '4px 10px', borderRadius: 'var(--radius-full)' }}>
-                  {opp.matchScore}% match
-                </span>
-                <button className="btn btn-icon btn-ghost" onClick={(e) => { e.stopPropagation(); toggleSave(opp.id); }}>
-                  {savedIds.has(opp.id) ? <BookmarkCheck size={20} style={{ color: 'var(--we-rot)' }} /> : <Bookmark size={20} />}
-                </button>
+
+              <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>{opp.title}</h3>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-600)', marginBottom: 'var(--space-3)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {opp.description}
+              </p>
+
+              <div style={{ display: 'flex', gap: 'var(--space-5)', flexWrap: 'wrap', fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {opp.location}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> {opp.duration}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={14} /> Start: {opp.startDate === 'Immediate' ? 'Immediate' : new Date(opp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                {daysUntil(opp.deadline) !== null && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: daysUntil(opp.deadline) <= 7 ? 'var(--we-error)' : daysUntil(opp.deadline) <= 14 ? '#B45309' : 'var(--we-gray-500)', fontWeight: daysUntil(opp.deadline) <= 14 ? 600 : 400 }}>
+                    {daysUntil(opp.deadline) <= 7 ? '⚠️' : '📅'} Deadline: {new Date(opp.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    {daysUntil(opp.deadline) <= 30 && ` (${daysUntil(opp.deadline)}d left)`}
+                  </span>
+                )}
               </div>
-            </div>
-
-            <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-2)' }}>{opp.title}</h3>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-600)', marginBottom: 'var(--space-3)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              {opp.description}
-            </p>
-
-            <div style={{ display: 'flex', gap: 'var(--space-5)', flexWrap: 'wrap', fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {opp.location}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={14} /> {opp.duration}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={14} /> Start: {opp.startDate === 'Immediate' ? 'Immediate' : new Date(opp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-              {daysUntil(opp.deadline) !== null && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: daysUntil(opp.deadline) <= 7 ? 'var(--we-error)' : daysUntil(opp.deadline) <= 14 ? '#B45309' : 'var(--we-gray-500)', fontWeight: daysUntil(opp.deadline) <= 14 ? 600 : 400 }}>
-                  {daysUntil(opp.deadline) <= 7 ? '⚠️' : '📅'} Deadline: {new Date(opp.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  {daysUntil(opp.deadline) <= 30 && ` (${daysUntil(opp.deadline)}d left)`}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Detail Modal */}
       {selectedOpp && (
@@ -142,9 +183,9 @@ export default function Opportunities() {
               <button className="btn btn-secondary" onClick={() => toggleSave(selectedOpp.id)}>
                 {savedIds.has(selectedOpp.id) ? <><BookmarkCheck size={16} /> Saved</> : <><Bookmark size={16} /> Save</>}
               </button>
-              <button className="btn btn-primary">
+              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="btn btn-primary" onClick={() => { addToast('Application submitted successfully!', 'success'); setSelectedOpp(null); }}>
                 Apply Now <ExternalLink size={16} />
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
