@@ -3,10 +3,12 @@ import { Users, Calendar, Briefcase, Activity, Download, Mail, Zap, TrendingUp, 
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement, Filler } from 'chart.js';
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import userStore from '../../services/UserStore';
+import { useTranslation } from 'react-i18next';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement, Filler);
 
 export default function AdminOverview() {
+  const { t } = useTranslation();
   const [students, setStudents] = useState([]);
   const [activityLog, setActivityLog] = useState([]);
   const [isLive, setIsLive] = useState(true);
@@ -130,7 +132,7 @@ export default function AdminOverview() {
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-            Admin Overview
+            {t('admin.overview')}
             {isLive && (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -138,15 +140,15 @@ export default function AdminOverview() {
                 fontSize: 'var(--text-xs)', fontWeight: 600, color: '#059669',
               }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', animation: 'pulse 2s ease-in-out infinite' }} />
-                LIVE
+                {t('admin.live')}
               </span>
             )}
           </h1>
-          <p>Real-time student engagement, activity, and platform health. <span style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-400)' }}>Updated {formatTimeAgo(lastUpdate)}</span></p>
+          <p>{t('admin.overviewSub')}</p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          <button className="btn btn-secondary btn-sm" onClick={loadData}><RefreshCw size={14} /> Refresh</button>
-          <button className="btn btn-secondary btn-sm"><Download size={14} /> Export Data</button>
+          <button className="btn btn-secondary btn-sm" onClick={loadData}><RefreshCw size={14} /> {t('admin.refresh')}</button>
+          <button className="btn btn-secondary btn-sm"><Download size={14} /> {t('admin.export')}</button>
         </div>
       </div>
 

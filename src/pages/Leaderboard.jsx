@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { leaderboardData } from '../data/content';
 import { useAuth } from '../context/AuthContext';
-import { Trophy, TrendingUp, Medal, Crown, Gem, Zap } from 'lucide-react';
+import { Trophy, TrendingUp, Medal, Crown, Gem, Zap, Gift } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const timeFilters = ['This Week', 'This Month', 'All Time'];
 const categoryFilters = ['Overall', 'Community', 'Skills', 'Events', 'Projects'];
 
 export default function Leaderboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [timeFilter, setTimeFilter] = useState('This Week');
   const [categoryFilter, setCategoryFilter] = useState('Overall');
@@ -14,8 +16,29 @@ export default function Leaderboard() {
   return (
     <div className="animate-fade-in">
       <div className="page-header">
-        <h1>Leaderboard</h1>
-        <p>See who's leading the community this week. Climb the ranks by contributing!</p>
+        <h1>{t('leaderboard.title')}</h1>
+        <p>{t('leaderboard.subtitle')}</p>
+      </div>
+
+      {/* Incentives Banner */}
+      <div className="card" style={{ 
+        background: 'linear-gradient(135deg, #FFF0F0, #FFF)', 
+        border: '1px solid var(--we-rot)', 
+        marginBottom: 'var(--space-6)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-4)'
+      }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--we-rot)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Gift size={24} />
+        </div>
+        <div>
+          <h4 style={{ color: 'var(--we-rot)', marginBottom: 'var(--space-1)' }}>{t('leaderboard.incentivesTitle')}</h4>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-700)', margin: 0, lineHeight: 1.5 }}>
+            <strong>1st:</strong> {t('leaderboard.incentives1')} • <strong>2nd:</strong> {t('leaderboard.incentives2')} • <strong>3rd:</strong> {t('leaderboard.incentives3')}<br/>
+            <strong>Ranks 1-10:</strong> {t('leaderboard.incentivesAll')}
+          </p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -74,11 +97,11 @@ export default function Leaderboard() {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', padding: 'var(--space-3) var(--space-5)', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--we-gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--we-gray-200)' }}>
-            <span style={{ width: 40, textAlign: 'center' }}>Rank</span>
-            <span style={{ flex: 1 }}>Student</span>
-            <span style={{ width: 80, textAlign: 'center' }}>Tier</span>
-            <span style={{ width: 80, textAlign: 'right' }}>Points</span>
-            <span style={{ width: 80, textAlign: 'right' }}>Weekly</span>
+            <span style={{ width: 40, textAlign: 'center' }}>{t('leaderboard.rank')}</span>
+            <span style={{ flex: 1 }}>{t('leaderboard.student')}</span>
+            <span style={{ width: 80, textAlign: 'center' }}>{t('leaderboard.tier')}</span>
+            <span style={{ width: 80, textAlign: 'right' }}>{t('leaderboard.points')}</span>
+            <span style={{ width: 80, textAlign: 'right' }}>{t('leaderboard.weekly')}</span>
           </div>
 
           {leaderboardData.map((entry, i) => (
@@ -90,7 +113,7 @@ export default function Leaderboard() {
                 <div className="avatar avatar-sm">{entry.initials}</div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {entry.name} {entry.userId === user?.id && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--we-rot)' }}>(you)</span>}
+                    {entry.name} {entry.userId === user?.id && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--we-rot)' }}>{t('leaderboard.you')}</span>}
                   </div>
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-400)' }}>{entry.university}</div>
                 </div>

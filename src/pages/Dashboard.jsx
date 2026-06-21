@@ -7,8 +7,10 @@ import { leaderboardData, dailySnippet } from '../data/content';
 import { Link } from 'react-router-dom';
 import { Briefcase, Calendar, MessageCircle, Users, TrendingUp, Zap, ChevronRight, Clock, MapPin, Star, Flame, BookOpen, Trophy, Award } from 'lucide-react';
 import AnimatedNumber from '../components/AnimatedNumber';
+import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { points, streak, getTier, getNextTier, weeklyPoints } = usePoints();
   const tier = getTier();
@@ -28,20 +30,20 @@ export default function Dashboard() {
     <div className="animate-fade-in">
       {/* Welcome Banner */}
       <div className="welcome-banner" style={{ marginBottom: 'var(--space-8)' }}>
-        <h2>Hi {user?.name?.split(' ')[0] || 'there'} 👋</h2>
+        <h2>{t('dashboard.welcome', { name: user?.name?.split(' ')[0] || 'there' })}</h2>
         <p>
           {user?.interests?.length > 0 ? (
-            <>Based on your interest in <strong>{user.interests.slice(0, 2).join(' & ')}</strong>, we found <strong>{topOpportunities.length} new opportunities</strong> and <strong>{upcomingEvents.length} upcoming events</strong> for you.</>
+            <span dangerouslySetInnerHTML={{ __html: t('dashboard.welcomeSub_true', { interest: user.interests.slice(0, 2).join(' & '), oppCount: topOpportunities.length, eventCount: upcomingEvents.length }) }} />
           ) : (
-            <>Welcome to WE-Connect! Explore <strong>{topOpportunities.length} opportunities</strong> and <strong>{upcomingEvents.length} upcoming events</strong>. Complete your profile to get personalized recommendations.</>
+            <span dangerouslySetInnerHTML={{ __html: t('dashboard.welcomeSub_false', { oppCount: topOpportunities.length, eventCount: upcomingEvents.length }) }} />
           )}
         </p>
         <div style={{ display: 'flex', gap: 'var(--space-4)', marginTop: 'var(--space-5)' }}>
           <Link to="/opportunities" className="btn btn-secondary" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none', backdropFilter: 'blur(8px)' }}>
-            View Opportunities <ChevronRight size={16} />
+            {t('dashboard.viewOpportunities')} <ChevronRight size={16} />
           </Link>
           <Link to="/events" className="btn btn-secondary" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}>
-            Browse Events
+            {t('dashboard.browseEvents')}
           </Link>
         </div>
       </div>
@@ -53,14 +55,14 @@ export default function Dashboard() {
             <Zap size={20} />
           </div>
           <div className="stat-value"><AnimatedNumber value={points} /></div>
-          <div className="stat-label">Total Points <span className="points-delta positive">+{weeklyPoints} this week</span></div>
+          <div className="stat-label">{t('dashboard.totalPoints')} <span className="points-delta positive">{t('dashboard.thisWeek', { points: weeklyPoints })}</span></div>
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #FF6B35, #F7931E)', color: 'white' }}>
             <Flame size={20} />
           </div>
           <div className="stat-value"><AnimatedNumber value={streak} /></div>
-          <div className="stat-label">Day Streak 🔥</div>
+          <div className="stat-label">{t('dashboard.dayStreak')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'var(--we-cyan-light)', color: 'var(--we-cyan)' }}>

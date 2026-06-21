@@ -6,38 +6,40 @@ import { notifications } from '../data/content';
 import {
   Home, Briefcase, Calendar, MessageCircle, Award, Users, Map, User,
   BookOpen, GraduationCap, Trophy, Settings, Search, Bell, Menu, X,
-  ChevronDown, LogOut, Shield, Zap, Star, TrendingUp, Mail, LayoutDashboard, Database
+  ChevronDown, LogOut, Shield, Zap, Star, TrendingUp, Mail, LayoutDashboard, Database, Globe
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const navItems = [
-  { to: '/', icon: Home, label: 'Home', section: 'main' },
-  { to: '/opportunities', icon: Briefcase, label: 'Opportunities', section: 'main', badge: 3 },
-  { to: '/events', icon: Calendar, label: 'Events', section: 'main' },
-  { to: '/community', icon: MessageCircle, label: 'Community', section: 'main', badge: 5 },
-  { to: '/skills', icon: Award, label: 'Skills & Badges', section: 'learn' },
-  { to: '/leaderboard', icon: Trophy, label: 'Leaderboard', section: 'learn' },
-  { to: '/journey', icon: Map, label: 'My Journey', section: 'connect' },
-  { to: '/blogs', icon: BookOpen, label: 'Blogs & Tutorials', section: 'content' },
-  { to: '/alumni', icon: GraduationCap, label: 'Alumni Stories', section: 'content' },
-  { to: '/profile', icon: User, label: 'Profile', section: 'account' },
+  { to: '/', icon: Home, labelKey: 'nav.home', section: 'main' },
+  { to: '/opportunities', icon: Briefcase, labelKey: 'nav.opportunities', section: 'main', badge: 3 },
+  { to: '/events', icon: Calendar, labelKey: 'nav.events', section: 'main' },
+  { to: '/community', icon: MessageCircle, labelKey: 'nav.community', section: 'main', badge: 5 },
+  { to: '/skills', icon: Award, labelKey: 'nav.skills', section: 'learn' },
+  { to: '/leaderboard', icon: Trophy, labelKey: 'nav.leaderboard', section: 'learn' },
+  { to: '/journey', icon: Map, labelKey: 'nav.journey', section: 'connect' },
+  { to: '/blogs', icon: BookOpen, labelKey: 'nav.blogs', section: 'content' },
+  { to: '/alumni', icon: GraduationCap, labelKey: 'nav.alumni', section: 'content' },
+  { to: '/profile', icon: User, labelKey: 'nav.profile', section: 'account' },
 ];
 
 const adminNavItems = [
-  { to: '/admin', icon: LayoutDashboard, label: 'Overview', section: 'management' },
-  { to: '/admin/students', icon: Users, label: 'Students CRM', section: 'management' },
-  { to: '/admin/campaigns', icon: Mail, label: 'Campaigns', section: 'management' },
-  { to: '/admin/content', icon: Database, label: 'Manage Content', section: 'management' },
+  { to: '/admin', icon: LayoutDashboard, labelKey: 'nav.adminOverview', section: 'management' },
+  { to: '/admin/students', icon: Users, labelKey: 'nav.adminStudents', section: 'management' },
+  { to: '/admin/campaigns', icon: Mail, labelKey: 'nav.adminCampaigns', section: 'management' },
+  { to: '/admin/content', icon: Database, labelKey: 'nav.adminContent', section: 'management' },
 ];
 
 const mobileNavItems = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/opportunities', icon: Briefcase, label: 'Jobs' },
-  { to: '/community', icon: MessageCircle, label: 'Community' },
-  { to: '/skills', icon: Award, label: 'Skills' },
-  { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/', icon: Home, labelKey: 'nav.home' },
+  { to: '/opportunities', icon: Briefcase, labelKey: 'nav.opportunities' },
+  { to: '/community', icon: MessageCircle, labelKey: 'nav.community' },
+  { to: '/skills', icon: Award, labelKey: 'nav.skills' },
+  { to: '/profile', icon: User, labelKey: 'nav.profile' },
 ];
 
 export default function AppShell() {
+  const { t, i18n } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const { user, isAdmin, logout } = useAuth();
@@ -46,6 +48,12 @@ export default function AppShell() {
   const navigate = useNavigate();
   const notifRef = useRef(null);
   const tier = getTier();
+
+  const toggleLanguage = () => {
+    const nextLang = i18n.language === 'en' ? 'de' : 'en';
+    i18n.changeLanguage(nextLang);
+    localStorage.setItem('we_language', nextLang);
+  };
 
   useEffect(() => { setSidebarOpen(false); }, [location]);
 
@@ -63,15 +71,15 @@ export default function AppShell() {
   };
 
   const sections = [
-    { key: 'main', label: 'Main' },
-    { key: 'learn', label: 'Learn & Grow' },
-    { key: 'connect', label: 'Connect' },
-    { key: 'content', label: 'Content' },
-    { key: 'account', label: 'Account' },
+    { key: 'main', labelKey: 'nav.main' },
+    { key: 'learn', labelKey: 'nav.learn' },
+    { key: 'connect', labelKey: 'nav.connect' },
+    { key: 'content', labelKey: 'nav.content' },
+    { key: 'account', labelKey: 'nav.account' },
   ];
 
   const adminSections = [
-    { key: 'management', label: 'Admin Tools' },
+    { key: 'management', labelKey: 'nav.management' },
   ];
 
   const activeSections = isAdmin ? adminSections : sections;
@@ -98,7 +106,7 @@ export default function AppShell() {
             if (!items.length) return null;
             return (
               <div key={section.key}>
-                <div className="sidebar-section-label">{section.label}</div>
+                <div className="sidebar-section-label">{t(section.labelKey)}</div>
                 {items.map(item => {
                   const isActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
                   return (
@@ -120,7 +128,7 @@ export default function AppShell() {
                         />
                       )}
                       <item.icon className="nav-icon" size={20} style={{ color: isActive ? 'var(--we-rot)' : 'inherit' }} />
-                      <span style={{ color: isActive ? 'var(--we-rot)' : 'inherit', fontWeight: isActive ? 600 : 500 }}>{item.label}</span>
+                      <span style={{ color: isActive ? 'var(--we-rot)' : 'inherit', fontWeight: isActive ? 600 : 500 }}>{t(item.labelKey)}</span>
                       {item.badge && <span className="nav-badge">{item.badge}</span>}
                     </div>
                   );
@@ -145,7 +153,7 @@ export default function AppShell() {
             onMouseEnter={(e) => { e.target.style.background = 'var(--we-rot-bg)'; e.target.style.color = 'var(--we-rot)'; e.target.style.borderColor = 'var(--we-rot)'; }}
             onMouseLeave={(e) => { e.target.style.background = 'var(--we-gray-50)'; e.target.style.color = 'var(--we-gray-600)'; e.target.style.borderColor = 'var(--we-gray-200)'; }}
           >
-            <LogOut size={16} /> Sign Out
+            <LogOut size={16} /> {t('nav.signOut')}
           </button>
         </div>
 
@@ -168,11 +176,14 @@ export default function AppShell() {
             </button>
             <div className="header-search">
               <Search className="search-icon" size={18} />
-              <input type="text" placeholder="Search opportunities, events, channels..." />
+              <input type="text" placeholder={t('shell.search')} />
             </div>
           </div>
 
           <div className="header-right">
+            <button className="header-icon-btn lang-toggle-btn" onClick={toggleLanguage} title="Toggle Language" style={{ fontSize: 'var(--text-xs)', fontWeight: 700, gap: 4, width: 'auto', padding: '0 8px' }}>
+              <Globe size={16} /> {i18n.language.toUpperCase()}
+            </button>
             {!isAdmin && streak > 0 && (
               <div className="streak-badge">
                 <span className="streak-flame">🔥</span>
@@ -204,8 +215,8 @@ export default function AppShell() {
                   style={{ transformOrigin: 'top right' }}
                 >
                   <div className="notif-dropdown-header">
-                    <h4 style={{ fontSize: '0.95rem', margin: 0 }}>Notifications</h4>
-                    <button className="btn btn-ghost btn-sm">Mark all read</button>
+                    <h4 style={{ fontSize: '0.95rem', margin: 0 }}>{t('shell.notifications')}</h4>
+                    <button className="btn btn-ghost btn-sm">{t('shell.markRead')}</button>
                   </div>
                   <div className="notif-dropdown-list">
                     {notifications.map(n => (
@@ -257,7 +268,7 @@ export default function AppShell() {
                   />
                 )}
                 <item.icon size={22} style={{ color: isActive ? 'var(--we-rot)' : 'inherit' }} />
-                <span style={{ color: isActive ? 'var(--we-rot)' : 'inherit' }}>{item.label}</span>
+                <span style={{ color: isActive ? 'var(--we-rot)' : 'inherit' }}>{t(item.labelKey)}</span>
               </div>
             );
           })}
