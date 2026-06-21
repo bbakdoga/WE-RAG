@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { quizzes } from '../data/quizzes';
+import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
 import { ArrowLeft, Clock, CheckCircle, XCircle, Award, ChevronRight } from 'lucide-react';
-import { pageVariants, scaleInVariant } from '../utils/animations';
+import userStore from '../services/UserStore';
 
 export default function QuizView() {
   const { quizId } = useParams();
   const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
   const { addPoints } = usePoints();
   const quiz = quizzes.find(q => q.id === quizId);
 
@@ -55,8 +56,33 @@ export default function QuizView() {
       setAnswered(false);
     } else {
       setFinished(true);
+
+      // Award points
       addPoints(10, 'Complete a skill quiz');
       if (percentage >= 80) addPoints(5, 'Score 80%+ bonus');
+
+      // Persist quiz completion to UserStore
+      if (user && passed) {
+        const completedQuizzes = [...new Set([...(user.completedQuizzes || []), quiz.id])];
+        const quizzesPassed = completedQuizzes.length;
+
+        // Check if we should award a badge
+        const newBadges = [...(user.badges || [])];
+        if (quiz.badgeId && !newBadges.includes(quiz.badgeId)) {
+          newBadges.push(quiz.badgeId);
+        }
+        // First Steps badge if not earned yet
+        if (!newBadges.includes('b15')) {
+          newBadges.push('b15');
+        }
+
+        userStore.updateUserProgress(user.id, {
+          completedQuizzes,
+          quizzesPassed,
+          badges: newBadges,
+        });
+        refreshUser();
+      }
     }
   };
 
@@ -64,16 +90,11 @@ export default function QuizView() {
 
   if (finished) {
     return (
-      <motion.div className="animate-fade-in" variants={pageVariants} initial="initial" animate="animate" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
+      <div className="animate-fade-in" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
         <div className="card card-elevated" style={{ padding: 'var(--space-10)' }}>
-          <motion.div 
-            initial={{ scale: 0, rotate: -180 }} 
-            animate={{ scale: 1, rotate: 0 }} 
-            transition={{ type: 'spring', damping: 12, stiffness: 100 }}
-            style={{ fontSize: '4rem', marginBottom: 'var(--space-4)' }}
-          >
+          <div style={{ fontSize: '4rem', marginBottom: 'var(--space-4)' }}>
             {passed ? '🎉' : '📚'}
-          </motion.div>
+          </div>
           <h2 style={{ marginBottom: 'var(--space-2)' }}>{passed ? 'Congratulations!' : 'Keep Learning!'}</h2>
           <p style={{ color: 'var(--we-gray-500)', marginBottom: 'var(--space-6)' }}>
             {passed ? `You passed the ${quiz.title} quiz!` : `You didn't pass this time, but you can retake it.`}
@@ -87,21 +108,18 @@ export default function QuizView() {
           </p>
 
           <div className="progress-bar" style={{ height: 12, marginBottom: 'var(--space-6)', maxWidth: 300, margin: '0 auto var(--space-6)' }}>
-            <motion.div 
-              className={`progress-bar-fill ${passed ? 'green' : ''}`} 
-              initial={{ width: 0 }}
-              animate={{ width: `${percentage}%` }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
-              style={{ background: passed ? 'var(--we-success)' : 'var(--we-rot)' }} 
+            <div
+              className={`progress-bar-fill ${passed ? 'green' : ''}`}
+              style={{ width: `${percentage}%`, background: passed ? 'var(--we-success)' : 'var(--we-rot)', transition: 'width 1.5s ease-out' }}
             />
           </div>
 
           {passed && (
-            <motion.div variants={scaleInVariant} initial="hidden" animate="show" style={{ padding: 'var(--space-4)', background: 'var(--we-success-bg)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-5)' }}>
+            <div style={{ padding: 'var(--space-4)', background: 'var(--we-success-bg)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-5)' }}>
               <Award size={24} style={{ color: 'var(--we-success)', marginBottom: 'var(--space-2)' }} />
               <p style={{ fontWeight: 600, color: '#047857' }}>+10 points earned! {percentage >= 80 ? '+5 bonus for 80%+!' : ''}</p>
               {quiz.badgeId && <p style={{ fontSize: 'var(--text-sm)', color: '#047857' }}>🏅 Badge unlocked: Check your profile!</p>}
-            </motion.div>
+            </div>
           )}
 
           <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center' }}>
@@ -109,12 +127,12 @@ export default function QuizView() {
             {!passed && <button className="btn btn-primary" onClick={() => { setCurrentQ(0); setSelected(null); setAnswered(false); setScore(0); setFinished(false); setAnswers([]); setTimeLeft(quiz.duration * 60); }}>Retake Quiz</button>}
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div className="animate-fade-in" variants={pageVariants} initial="initial" animate="animate" style={{ maxWidth: 700, margin: '0 auto' }}>
+    <div className="animate-fade-in" style={{ maxWidth: 700, margin: '0 auto' }}>
       {/* Quiz Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)' }}>
         <button className="btn btn-ghost" onClick={() => navigate('/skills')}>
@@ -132,24 +150,16 @@ export default function QuizView() {
 
       {/* Progress */}
       <div className="progress-bar" style={{ marginBottom: 'var(--space-6)', height: 6 }}>
-        <motion.div 
-          className="progress-bar-fill cyan" 
-          animate={{ width: `${((currentQ) / totalQuestions) * 100}%` }}
-          transition={{ duration: 0.3 }}
+        <div
+          className="progress-bar-fill cyan"
+          style={{ width: `${((currentQ) / totalQuestions) * 100}%`, transition: 'width 0.3s' }}
         />
       </div>
 
       {/* Question */}
-      <AnimatePresence mode="wait">
-        {question && (
-          <motion.div 
-            key={currentQ}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-            className="quiz-card"
-          >
-            <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-6)' }}>{question.q}</h3>
+      {question && (
+        <div className="quiz-card">
+          <h3 style={{ fontSize: 'var(--text-lg)', marginBottom: 'var(--space-6)' }}>{question.q}</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {question.options.map((opt, i) => {
@@ -181,18 +191,17 @@ export default function QuizView() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-6)', gap: 'var(--space-3)' }}>
             {!answered ? (
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="btn btn-primary" onClick={handleAnswer} disabled={selected === null}>
+              <button className="btn btn-primary" onClick={handleAnswer} disabled={selected === null}>
                 Submit Answer
-              </motion.button>
+              </button>
             ) : (
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="btn btn-primary" onClick={handleNext}>
+              <button className="btn btn-primary" onClick={handleNext}>
                 {currentQ < totalQuestions - 1 ? <>Next <ChevronRight size={16} /></> : 'Finish Quiz'}
-              </motion.button>
+              </button>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
-      </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

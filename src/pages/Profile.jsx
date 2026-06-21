@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
-import { badges } from '../data/badges';
+import { getUserBadges } from '../data/badges';
 import { opportunities } from '../data/opportunities';
 import { MapPin, Mail, GraduationCap, Calendar, Award, Star, Bookmark, ExternalLink, Edit3, Share2, Printer, Download } from 'lucide-react';
 
@@ -10,7 +10,8 @@ export default function Profile() {
   const { points, getTier, streak } = usePoints();
   const tier = getTier();
   const [activeTab, setActiveTab] = useState('overview');
-  const earnedBadges = badges.filter(b => b.earned);
+  const allBadges = getUserBadges(user);
+  const earnedBadges = allBadges.filter(b => b.earned);
   const savedOpps = opportunities.filter(o => user?.savedOpportunities?.includes(o.id));
 
   return (
@@ -28,11 +29,14 @@ export default function Profile() {
             <div style={{ display: 'flex', gap: 'var(--space-5)', flexWrap: 'wrap', fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)', marginBottom: 'var(--space-3)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><GraduationCap size={14} /> {user?.university}</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={14} /> Semester {user?.semester}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {user?.location}</span>
+              {user?.location && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> {user.location}</span>}
             </div>
-            <p style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>{user?.bio}</p>
+            {user?.bio && <p style={{ fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>{user.bio}</p>}
             <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
               {user?.skills?.map(s => <span key={s} className="badge badge-cyan">{s}</span>)}
+              {(!user?.skills || user.skills.length === 0) && (
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-400)' }}>No skills added yet. Take quizzes to earn skill badges!</span>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'flex-end' }}>
@@ -80,19 +84,28 @@ export default function Profile() {
             <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
               <h4 style={{ marginBottom: 'var(--space-4)' }}>Career Goals</h4>
               <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                {user?.careerGoals?.map(g => <span key={g} className="badge badge-red">{g}</span>)}
+                {user?.careerGoals?.length > 0
+                  ? user.careerGoals.map(g => <span key={g} className="badge badge-red">{g}</span>)
+                  : <span style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-400)' }}>Not set yet</span>
+                }
               </div>
             </div>
             <div className="card" style={{ marginBottom: 'var(--space-5)' }}>
               <h4 style={{ marginBottom: 'var(--space-4)' }}>Interests</h4>
               <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                {user?.interests?.map(i => <span key={i} className="chip active">{i}</span>)}
+                {user?.interests?.length > 0
+                  ? user.interests.map(i => <span key={i} className="chip active">{i}</span>)
+                  : <span style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-400)' }}>No interests selected yet</span>
+                }
               </div>
             </div>
             <div className="card">
               <h4 style={{ marginBottom: 'var(--space-4)' }}>Preferred Locations</h4>
               <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                {user?.preferredLocations?.map(l => <span key={l} className="badge badge-gray"><MapPin size={10} /> {l}</span>)}
+                {user?.preferredLocations?.length > 0
+                  ? user.preferredLocations.map(l => <span key={l} className="badge badge-gray"><MapPin size={10} /> {l}</span>)
+                  : <span style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-400)' }}>Not set yet</span>
+                }
               </div>
             </div>
           </div>
@@ -103,7 +116,7 @@ export default function Profile() {
                 <div className="progress-bar" style={{ flex: 1, height: 10 }}>
                   <div className="progress-bar-fill green" style={{ width: `${user?.profileCompletion || 0}%` }} />
                 </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{user?.profileCompletion}%</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{user?.profileCompletion || 0}%</span>
               </div>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}>Complete your profile to unlock +20 points and better opportunity matching!</p>
             </div>
@@ -135,7 +148,7 @@ export default function Profile() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
-                <div><div style={{ fontSize: 'var(--text-xs)', opacity: 0.6 }}>Member Since</div><div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{new Date(user?.joinedDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div></div>
+                <div><div style={{ fontSize: 'var(--text-xs)', opacity: 0.6 }}>Member Since</div><div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{user?.joinedDate ? new Date(user.joinedDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</div></div>
                 <div><div style={{ fontSize: 'var(--text-xs)', opacity: 0.6 }}>Points</div><div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', fontFamily: 'var(--font-mono)' }}>{points}</div></div>
                 <div><div style={{ fontSize: 'var(--text-xs)', opacity: 0.6 }}>Badges</div><div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{earnedBadges.length} earned</div></div>
                 <div><div style={{ fontSize: 'var(--text-xs)', opacity: 0.6 }}>Streak</div><div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>🔥 {streak} days</div></div>
@@ -159,13 +172,19 @@ export default function Profile() {
 
       {activeTab === 'badges' && (
         <div className="grid-4" style={{ gap: 'var(--space-4)' }}>
-          {earnedBadges.map(b => (
+          {earnedBadges.length > 0 ? earnedBadges.map(b => (
             <div key={b.id} className="card" style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-2)' }}>{b.icon}</div>
               <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: 'var(--space-1)' }}>{b.name}</div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-400)' }}>Earned {new Date(b.earnedDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-400)' }}>Earned</div>
             </div>
-          ))}
+          )) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 'var(--space-10)', color: 'var(--we-gray-400)' }}>
+              <Award size={48} style={{ marginBottom: 'var(--space-3)', opacity: 0.5 }} />
+              <h4>No badges yet</h4>
+              <p style={{ fontSize: 'var(--text-sm)' }}>Complete quizzes and events to earn your first badge!</p>
+            </div>
+          )}
         </div>
       )}
 

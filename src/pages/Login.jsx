@@ -1,30 +1,92 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, ChevronRight, Zap } from 'lucide-react';
+import { Eye, EyeOff, ChevronRight, Zap, Shield, UserPlus } from 'lucide-react';
+import userStore from '../services/UserStore';
 
 const interestOptions = ['Embedded Systems', 'PCB Design', 'IoT', 'Automotive', 'Power Electronics', 'Software Engineering', 'Data Science', 'Robotics', 'AI/ML', 'Renewable Energy', 'Signal Processing', 'Maker Projects'];
 const goalOptions = ['Internship', 'Working Student', 'Thesis', 'Scholarship', 'Full-time', 'Mentoring', 'Free Components'];
 
+// Demo account cards data
+const demoAccounts = [
+  {
+    id: 'u1', label: 'Anna Müller', role: 'student',
+    sub: 'TU Munich · Expert · 847 pts',
+    initials: 'AM', color: '#CC0000', icon: '🎓',
+    desc: 'Experienced student with badges & progress',
+  },
+  {
+    id: 'u2', label: 'Lukas Weber', role: 'student',
+    sub: 'KIT · Master · 1,243 pts',
+    initials: 'LW', color: '#009EE0', icon: '🎓',
+    desc: 'Top performer with high engagement',
+  },
+  {
+    id: 'u-fresh', label: 'Max Neumann', role: 'student',
+    sub: 'TU Munich · Novice · 0 pts',
+    initials: 'MN', color: '#B9C900', icon: '🌱',
+    desc: 'Fresh account — start from scratch!',
+  },
+];
+
+const adminAccount = {
+  id: 'admin-1', label: 'WE Admin Team', role: 'admin',
+  sub: 'Real-time analytics dashboard',
+  initials: 'WE', color: '#7C3AED', icon: '🛡️',
+  desc: 'Monitor student activity live',
+};
+
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, loginAsUser, register } = useAuth();
   const [mode, setMode] = useState('login'); // login | register
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [formData, setFormData] = useState({
     name: '', email: '', password: '', university: '', program: '',
     degree: 'Bachelor', semester: 1, interests: [], goals: [],
   });
 
-  const handleQuickLogin = () => {
-    login();
-    navigate('/');
+  const handleLogin = () => {
+    setError('');
+    const result = login(loginEmail, loginPassword);
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
+    navigate(result.role === 'admin' ? '/admin' : '/');
+  };
+
+  const handleDemoLogin = (userId) => {
+    setError('');
+    const result = loginAsUser(userId);
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
+    navigate(result.role === 'admin' ? '/admin' : '/');
   };
 
   const handleRegister = () => {
     if (step < 4) { setStep(s => s + 1); return; }
-    login({ ...formData, initials: formData.name.split(' ').map(n => n[0]).join('').toUpperCase() });
+    setError('');
+    const initials = formData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+    const result = register({
+      ...formData,
+      initials,
+      bio: '',
+      skills: [],
+      location: '',
+      expectedGraduation: '',
+      preferredLocations: [],
+    });
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
     navigate('/');
   };
 
@@ -83,34 +145,100 @@ export default function Login() {
               <h1>Welcome back</h1>
               <p className="auth-subtitle">Sign in to your WE-Connect account</p>
 
+              {error && (
+                <div style={{ padding: 'var(--space-3) var(--space-4)', background: 'var(--we-rot-bg)', color: 'var(--we-rot)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 'var(--space-4)' }}>
+                  {error}
+                </div>
+              )}
+
               <div className="form-group">
                 <label className="form-label">Email</label>
-                <input className="form-input" type="email" placeholder="anna.mueller@tum.de" />
+                <input className="form-input" type="email" placeholder="anna.mueller@tum.de" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Password</label>
                 <div style={{ position: 'relative' }}>
-                  <input className="form-input" type={showPassword ? 'text' : 'password'} placeholder="••••••••" />
+                  <input className="form-input" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleLogin(); }} />
                   <button style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--we-gray-400)' }} onClick={() => setShowPassword(!showPassword)}>
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
-              <button className="btn btn-primary btn-lg" style={{ width: '100%', marginBottom: 'var(--space-4)' }} onClick={handleQuickLogin}>
+              <button className="btn btn-primary btn-lg" style={{ width: '100%', marginBottom: 'var(--space-4)' }} onClick={handleLogin}>
                 Sign In
               </button>
 
-              <div style={{ textAlign: 'center', margin: 'var(--space-4) 0', color: 'var(--we-gray-400)', fontSize: 'var(--text-sm)' }}>or</div>
+              <div style={{ textAlign: 'center', margin: 'var(--space-5) 0 var(--space-4)', color: 'var(--we-gray-400)', fontSize: 'var(--text-sm)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--we-gray-200)' }} />
+                <span>or pick a demo account</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--we-gray-200)' }} />
+              </div>
 
-              <button className="btn btn-outline btn-lg" style={{ width: '100%', marginBottom: 'var(--space-6)' }} onClick={handleQuickLogin}>
-                <Zap size={18} /> Quick Demo Login (as Anna Müller)
+              {/* Demo Account Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+                {demoAccounts.map(acc => (
+                  <button
+                    key={acc.id}
+                    onClick={() => handleDemoLogin(acc.id)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)',
+                      padding: 'var(--space-4) var(--space-3)', background: 'var(--we-white)',
+                      border: '2px solid var(--we-gray-200)', borderRadius: 'var(--radius-lg)',
+                      cursor: 'pointer', transition: 'all 0.2s ease', textAlign: 'center',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = acc.color; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 4px 12px ${acc.color}20`; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--we-gray-200)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <div style={{
+                      width: 44, height: 44, borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${acc.color}, ${acc.color}cc)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'white', fontWeight: 700, fontSize: 'var(--text-sm)',
+                    }}>
+                      {acc.initials}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--we-black)' }}>{acc.icon} {acc.label.split(' ')[0]}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--we-gray-500)', lineHeight: 1.3, marginTop: 2 }}>{acc.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Admin Card */}
+              <button
+                onClick={() => handleDemoLogin(adminAccount.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
+                  width: '100%', padding: 'var(--space-4)',
+                  background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
+                  border: '2px solid #ddd6fe', borderRadius: 'var(--radius-lg)',
+                  cursor: 'pointer', transition: 'all 0.2s ease', textAlign: 'left',
+                  marginBottom: 'var(--space-5)',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#7C3AED'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.15)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#ddd6fe'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <div style={{
+                  width: 44, height: 44, borderRadius: 'var(--radius-md)',
+                  background: 'linear-gradient(135deg, #7C3AED, #5B21B6)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', fontWeight: 800, fontSize: 'var(--text-sm)', flexShrink: 0,
+                }}>
+                  WE
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: '#5B21B6' }}>🛡️ Admin Dashboard</div>
+                  <div style={{ fontSize: 'var(--text-xs)', color: '#7C3AED' }}>Real-time analytics · Monitor student activity live</div>
+                </div>
+                <ChevronRight size={18} style={{ color: '#7C3AED' }} />
               </button>
 
               <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)' }}>
                 Don't have an account?{' '}
-                <button style={{ background: 'none', border: 'none', color: 'var(--we-rot)', cursor: 'pointer', fontWeight: 600, fontSize: 'var(--text-sm)' }} onClick={() => setMode('register')}>
+                <button style={{ background: 'none', border: 'none', color: 'var(--we-rot)', cursor: 'pointer', fontWeight: 600, fontSize: 'var(--text-sm)' }} onClick={() => { setMode('register'); setError(''); }}>
                   Register now
                 </button>
               </p>
@@ -127,6 +255,12 @@ export default function Login() {
                 {step === 3 && 'What are you interested in?'}
                 {step === 4 && 'What are your career goals?'}
               </p>
+
+              {error && (
+                <div style={{ padding: 'var(--space-3) var(--space-4)', background: 'var(--we-rot-bg)', color: 'var(--we-rot)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', fontWeight: 500, marginBottom: 'var(--space-4)' }}>
+                  {error}
+                </div>
+              )}
 
               {/* Step Indicator */}
               <div className="step-indicator">
@@ -219,7 +353,7 @@ export default function Login() {
 
               <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--we-gray-500)', marginTop: 'var(--space-5)' }}>
                 Already have an account?{' '}
-                <button style={{ background: 'none', border: 'none', color: 'var(--we-rot)', cursor: 'pointer', fontWeight: 600, fontSize: 'var(--text-sm)' }} onClick={() => { setMode('login'); setStep(1); }}>
+                <button style={{ background: 'none', border: 'none', color: 'var(--we-rot)', cursor: 'pointer', fontWeight: 600, fontSize: 'var(--text-sm)' }} onClick={() => { setMode('login'); setStep(1); setError(''); }}>
                   Sign in
                 </button>
               </p>

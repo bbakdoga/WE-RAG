@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
 import { notifications } from '../data/content';
-import { pageVariants, staggerContainer, listItemFade } from '../utils/animations';
 import {
   Home, Briefcase, Calendar, MessageCircle, Award, Users, Map, User,
   BookOpen, GraduationCap, Trophy, Settings, Search, Bell, Menu, X,
@@ -42,7 +40,7 @@ const mobileNavItems = [
 export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const { user, isAdmin, switchDemoRole } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { points, getTier, streak, showPointsAnimation } = usePoints();
   const location = useLocation();
   const navigate = useNavigate();
@@ -58,6 +56,11 @@ export default function AppShell() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const sections = [
     { key: 'main', label: 'Main' },
@@ -89,17 +92,12 @@ export default function AppShell() {
           </div>
         </div>
 
-        <motion.nav 
-          className="sidebar-nav"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="show"
-        >
+        <nav className="sidebar-nav">
           {activeSections.map(section => {
             const items = activeNavItems.filter(i => i.section === section.key);
             if (!items.length) return null;
             return (
-              <motion.div key={section.key} variants={listItemFade}>
+              <div key={section.key}>
                 <div className="sidebar-section-label">{section.label}</div>
                 {items.map(item => {
                   const isActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
@@ -110,11 +108,8 @@ export default function AppShell() {
                       onClick={() => navigate(item.to)}
                     >
                       {isActive && (
-                        <motion.div
-                          layoutId="activeTabIndicator"
+                        <div
                           className="active-tab-bg"
-                          initial={false}
-                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
                           style={{
                             position: 'absolute',
                             inset: 0,
@@ -130,49 +125,37 @@ export default function AppShell() {
                     </div>
                   );
                 })}
-              </motion.div>
+              </div>
             );
           })}
-        </motion.nav>
+        </nav>
 
-        {/* Demo Switcher */}
+        {/* Logout Button */}
         <div style={{ padding: 'var(--space-4)', borderTop: '1px solid var(--we-gray-200)', marginTop: 'auto' }}>
-          <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--we-gray-500)', marginBottom: 'var(--space-2)' }}>DEMO MODE</div>
-          <div style={{ display: 'flex', background: 'var(--we-gray-100)', borderRadius: 'var(--radius-full)', padding: 4, position: 'relative' }}>
-            <div 
-              style={{ 
-                position: 'absolute', 
-                top: 4, 
-                bottom: 4, 
-                width: 'calc(50% - 4px)', 
-                background: 'var(--we-white)', 
-                borderRadius: 'var(--radius-full)',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: isAdmin ? 'translateX(100%)' : 'translateX(0)',
-                zIndex: 0
-              }} 
-            />
-            <button 
-              onClick={() => { switchDemoRole('student'); navigate('/'); }}
-              style={{ flex: 1, padding: 'var(--space-2) 0', fontSize: 'var(--text-xs)', fontWeight: !isAdmin ? 600 : 500, color: !isAdmin ? 'var(--we-rot)' : 'var(--we-gray-500)', zIndex: 1, position: 'relative' }}
-            >
-              🎓 Student
-            </button>
-            <button 
-              onClick={() => { switchDemoRole('admin'); navigate('/admin'); }}
-              style={{ flex: 1, padding: 'var(--space-2) 0', fontSize: 'var(--text-xs)', fontWeight: isAdmin ? 600 : 500, color: isAdmin ? 'var(--we-rot)' : 'var(--we-gray-500)', zIndex: 1, position: 'relative' }}
-            >
-              🛡️ Admin
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+              width: '100%', padding: 'var(--space-3) var(--space-4)',
+              background: 'var(--we-gray-50)', border: '1px solid var(--we-gray-200)',
+              borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--we-gray-600)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => { e.target.style.background = 'var(--we-rot-bg)'; e.target.style.color = 'var(--we-rot)'; e.target.style.borderColor = 'var(--we-rot)'; }}
+            onMouseLeave={(e) => { e.target.style.background = 'var(--we-gray-50)'; e.target.style.color = 'var(--we-gray-600)'; e.target.style.borderColor = 'var(--we-gray-200)'; }}
+          >
+            <LogOut size={16} /> Sign Out
+          </button>
         </div>
 
         <div className="sidebar-user">
           <div className="sidebar-user-avatar">{user?.initials || 'WE'}</div>
           <div className="sidebar-user-info">
             <span className="name">{user?.name || 'Guest'}</span>
-            <span className="tier">{tier.icon} {tier.name} · {points} pts</span>
+            <span className="tier">
+              {isAdmin ? '🛡️ Administrator' : `${tier.icon} ${tier.name} · ${points} pts`}
+            </span>
           </div>
         </div>
       </aside>
@@ -190,93 +173,65 @@ export default function AppShell() {
           </div>
 
           <div className="header-right">
-            <AnimatePresence>
-              {streak > 0 && (
-                <motion.div 
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                  className="streak-badge"
-                >
-                  <span className="streak-flame">🔥</span>
-                  <span>{streak}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {!isAdmin && streak > 0 && (
+              <div className="streak-badge">
+                <span className="streak-flame">🔥</span>
+                <span>{streak}</span>
+              </div>
+            )}
 
-            <AnimatePresence>
-              {showPointsAnimation && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20, scale: 0.8 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -20, scale: 0.8 }}
-                  className="points-delta positive" 
-                  style={{ position: 'absolute', top: '70px', right: '140px', zIndex: 999 }}
-                >
-                  +{showPointsAnimation.amount} pts
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {showPointsAnimation && (
+              <div
+                className="points-delta positive"
+                style={{ position: 'absolute', top: '70px', right: '140px', zIndex: 999, animation: 'fadeInUp 0.3s ease' }}
+              >
+                +{showPointsAnimation.amount} pts
+              </div>
+            )}
 
             <div ref={notifRef} style={{ position: 'relative' }}>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="header-icon-btn" 
+              <button
+                className="header-icon-btn"
                 onClick={() => setNotifOpen(!notifOpen)}
               >
                 <Bell size={20} />
-                {unreadCount > 0 && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="notif-dot" />}
-              </motion.button>
+                {unreadCount > 0 && <span className="notif-dot" />}
+              </button>
 
-              <AnimatePresence>
-                {notifOpen && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
-                    className="notif-dropdown"
-                    style={{ transformOrigin: 'top right' }}
-                  >
-                    <div className="notif-dropdown-header">
-                      <h4 style={{ fontSize: '0.95rem', margin: 0 }}>Notifications</h4>
-                      <button className="btn btn-ghost btn-sm">Mark all read</button>
-                    </div>
-                    <div className="notif-dropdown-list">
-                      {notifications.map(n => (
-                        <div key={n.id} className={`notification-item ${!n.read ? 'unread' : ''}`}>
-                          <span style={{ fontSize: '1.2rem' }}>{n.icon}</span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--we-black)' }}>{n.title}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--we-gray-500)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.description}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--we-gray-400)', marginTop: '2px' }}>{n.time}</div>
-                          </div>
+              {notifOpen && (
+                <div
+                  className="notif-dropdown"
+                  style={{ transformOrigin: 'top right' }}
+                >
+                  <div className="notif-dropdown-header">
+                    <h4 style={{ fontSize: '0.95rem', margin: 0 }}>Notifications</h4>
+                    <button className="btn btn-ghost btn-sm">Mark all read</button>
+                  </div>
+                  <div className="notif-dropdown-list">
+                    {notifications.map(n => (
+                      <div key={n.id} className={`notification-item ${!n.read ? 'unread' : ''}`}>
+                        <span style={{ fontSize: '1.2rem' }}>{n.icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--we-black)' }}>{n.title}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--we-gray-500)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.description}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--we-gray-400)', marginTop: '2px' }}>{n.time}</div>
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('/profile')}>
+            <div onClick={() => navigate(isAdmin ? '/admin' : '/profile')} style={{ cursor: 'pointer' }}>
               <div className="header-avatar">{user?.initials || 'WE'}</div>
-            </motion.div>
+            </div>
           </div>
         </header>
 
-        <AnimatePresence mode="wait">
-          <motion.main 
-            key={location.pathname}
-            className="app-content"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <Outlet />
-          </motion.main>
-        </AnimatePresence>
+        <main className="app-content">
+          <Outlet />
+        </main>
       </div>
 
       {!isAdmin && (
@@ -290,11 +245,8 @@ export default function AppShell() {
                 onClick={() => navigate(item.to)}
               >
                 {isActive && (
-                  <motion.div
-                    layoutId="mobileActiveTabIndicator"
+                  <div
                     className="mobile-active-tab-bg"
-                    initial={false}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     style={{
                       position: 'absolute',
                       inset: 0,

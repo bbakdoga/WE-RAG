@@ -1,21 +1,58 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import userStore from '../services/UserStore';
 
 const PointsContext = createContext(null);
 
 export function PointsProvider({ children }) {
-  const [points, setPoints] = useState(847);
-  const [weeklyPoints, setWeeklyPoints] = useState(45);
-  const [streak, setStreak] = useState(12);
+  const { user, refreshUser } = useAuth();
+
+  const [points, setPoints] = useState(0);
+  const [weeklyPoints, setWeeklyPoints] = useState(0);
+  const [streak, setStreak] = useState(0);
   const [recentActions, setRecentActions] = useState([]);
   const [showPointsAnimation, setShowPointsAnimation] = useState(null);
 
+  // Sync state from user whenever user object changes
+  useEffect(() => {
+    if (user && user.role !== 'admin') {
+      setPoints(user.points || 0);
+      setWeeklyPoints(user.weeklyPoints || 0);
+      setStreak(user.streak || 0);
+    }
+  }, [user]);
+
   const addPoints = useCallback((amount, action) => {
-    setPoints(prev => prev + amount);
-    setWeeklyPoints(prev => prev + amount);
-    setRecentActions(prev => [{ action, points: amount, time: new Date().toISOString() }, ...prev].slice(0, 20));
+    if (!user || user.role === 'admin') return;
+
+    const newPoints = (user.points || 0) + amount;
+    const newWeekly = (user.weeklyPoints || 0) + amount;
+
+    // Update local state immediately for responsive UI
+    setPoints(newPoints);
+    setWeeklyPoints(newWeekly);
+
+    // Persist to UserStore (broadcasts to other tabs)
+    userStore.updateUserProgress(user.id, {
+      points: newPoints,
+      weeklyPoints: newWeekly,
+    });
+
+    // Log the activity
+    userStore.logActivity(user.id, action, amount);
+
+    // Update recent actions locally
+    setRecentActions(prev =>
+      [{ action, points: amount, time: new Date().toISOString() }, ...prev].slice(0, 20)
+    );
+
+    // Show animation
     setShowPointsAnimation({ amount, action });
     setTimeout(() => setShowPointsAnimation(null), 2000);
-  }, []);
+
+    // Refresh user to keep AuthContext in sync
+    refreshUser();
+  }, [user, refreshUser]);
 
   const getTier = useCallback((pts) => {
     const p = pts ?? points;
@@ -35,7 +72,10 @@ export function PointsProvider({ children }) {
   }, [points]);
 
   return (
-    <PointsContext.Provider value={{ points, weeklyPoints, streak, recentActions, showPointsAnimation, addPoints, getTier, getNextTier }}>
+    <PointsContext.Provider value={{
+      points, weeklyPoints, streak, recentActions,
+      showPointsAnimation, addPoints, getTier, getNextTier
+    }}>
       {children}
     </PointsContext.Provider>
   );
