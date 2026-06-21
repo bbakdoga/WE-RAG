@@ -3,25 +3,64 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { usePoints } from '../context/PointsContext';
 import { badges } from '../data/badges';
-import { Send, Bot, User, Sparkles, Briefcase, BookOpen, FileText, Target, Map } from 'lucide-react';
+import { sendToGemini, resetConversation, isGeminiConfigured } from '../utils/geminiService';
+import { isProductQuery, generateProductResponse } from '../utils/productSearch';
+import { Send, Sparkles, Map, Zap, AlertCircle, RefreshCw, Bot } from 'lucide-react';
 import { staggerContainer, fadeUpVariant, listStagger, listItemFade } from '../utils/animations';
 import AnimatedNumber from '../components/AnimatedNumber';
 
-const careerPaths = [
-  { title: 'Hardware Development', icon: '🔧', desc: 'Design circuits, PCBs, and electronic modules for automotive and industrial applications.', match: 92 },
-  { title: 'Embedded Software', icon: '💻', desc: 'Develop firmware and software for microcontrollers and embedded systems.', match: 88 },
-  { title: 'R&D / Innovation', icon: '🔬', desc: 'Research new technologies and develop next-generation electronic components.', match: 85 },
-  { title: 'Applications Engineering', icon: '🎯', desc: 'Support customers in selecting and integrating WE components into their designs.', match: 78 },
-  { title: 'Product Management', icon: '📊', desc: 'Lead product strategy and lifecycle management for component families.', match: 65 },
+const quickReplies = [
+  'What WE components should I use for a buck converter?',
+  'Explore career paths at Würth Elektronik',
+  'Help me choose a thesis topic',
+  'Recommend components for an IoT sensor node',
+  'How do I get free components for my project?',
+  'What skills should I develop for hardware engineering?',
+  'Prepare me for a WE internship interview',
 ];
 
-const quickReplies = [
-  'Explore career paths at WE',
-  'Help me choose a thesis topic',
-  'What skills should I develop?',
-  'Review my CV checklist',
-  'Prepare for interview',
-];
+// Simple markdown renderer: bold, bullets, links
+function renderMarkdown(text) {
+  const lines = text.split('\n');
+  return lines.map((line, i) => {
+    // Bullet points
+    if (line.match(/^[\s]*[-•*]\s/)) {
+      const content = line.replace(/^[\s]*[-•*]\s/, '');
+      return <li key={i} style={{ marginLeft: 'var(--space-4)', listStyle: 'disc' }}>{renderInline(content)}</li>;
+    }
+    // Numbered lists
+    if (line.match(/^[\s]*\d+\.\s/)) {
+      const content = line.replace(/^[\s]*\d+\.\s/, '');
+      return <li key={i} style={{ marginLeft: 'var(--space-4)', listStyle: 'decimal' }}>{renderInline(content)}</li>;
+    }
+    // Headers
+    if (line.startsWith('### ')) return <h4 key={i} style={{ fontWeight: 700, marginTop: 'var(--space-3)' }}>{renderInline(line.slice(4))}</h4>;
+    if (line.startsWith('## ')) return <h3 key={i} style={{ fontWeight: 700, marginTop: 'var(--space-3)' }}>{renderInline(line.slice(3))}</h3>;
+    // Empty lines
+    if (!line.trim()) return <br key={i} />;
+    // Regular paragraph
+    return <p key={i} style={{ margin: '2px 0' }}>{renderInline(line)}</p>;
+  });
+}
+
+function renderInline(text) {
+  // Bold, italic, links, inline code
+  const parts = [];
+  const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(\[(.+?)\]\((.+?)\))|(`(.+?)`)/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    if (match[1]) parts.push(<strong key={key++}>{match[2]}</strong>);
+    else if (match[3]) parts.push(<em key={key++}>{match[4]}</em>);
+    else if (match[5]) parts.push(<a key={key++} href={match[7]} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--we-rot)', textDecoration: 'underline' }}>{match[6]}</a>);
+    else if (match[8]) parts.push(<code key={key++} style={{ background: 'var(--we-gray-100)', padding: '1px 4px', borderRadius: 4, fontSize: '0.9em' }}>{match[9]}</code>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
 
 export default function Journey() {
   const { user } = useAuth();
@@ -29,10 +68,11 @@ export default function Journey() {
   const tier = getTier();
   const [activeTab, setActiveTab] = useState('companion');
   const [chatMessages, setChatMessages] = useState([
-    { role: 'bot', text: `Hi ${user?.name?.split(' ')[0] || 'there'}! 👋 I'm your AI Career Companion. Based on your profile — ${user?.program} at ${user?.university}, with interests in ${user?.interests?.slice(0, 2).join(' & ')} — I can help you navigate your career journey at Würth Elektronik.\n\nWhat would you like to explore?` }
+    { role: 'bot', text: `Hi ${user?.name?.split(' ')[0] || 'there'}! 👋 I'm your AI Career & Product Companion, powered by Gemini.\n\nI can help you with:\n🔌 **Product recommendations** — Find the right Würth Elektronik components for your project\n🎯 **Career guidance** — Explore paths, thesis topics, and interview prep\n📈 **Skill development** — Personalized learning recommendations\n\nWhat would you like to explore?` }
   ]);
   const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const earnedBadges = badges.filter(b => b.earned);
 
@@ -40,67 +80,70 @@ export default function Journey() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const simulateResponse = (userMsg) => {
-    setIsTyping(true);
-    const lowerMsg = userMsg.toLowerCase();
-    let response = '';
-
-    if (lowerMsg.includes('career path') || lowerMsg.includes('explore career')) {
-      response = `Based on your profile in **${user?.program}** with skills in ${user?.skills?.slice(0, 3).join(', ')}, here are the career paths that match you best at Würth Elektronik:\n\n` +
-        careerPaths.map(p => `${p.icon} **${p.title}** (${p.match}% match)\n${p.desc}`).join('\n\n') +
-        `\n\nWould you like me to go deeper into any of these paths? I can show you current openings, required skills, and real employee stories.`;
-    } else if (lowerMsg.includes('thesis')) {
-      response = `Great question! Based on your interests in ${user?.interests?.slice(0, 2).join(' & ')}, here are 3 thesis topics currently available:\n\n` +
-        `📝 **1. EMC Analysis of High-Speed PCB Designs Using ML**\nCombine machine learning with EMC simulation — perfect for your signal processing background.\n\n` +
-        `📝 **2. Thermal Management in GaN-Based Power Converters**\nInvestigate cooling solutions for next-gen power systems.\n\n` +
-        `📝 **3. Low-Power Sensor Networks for Industrial IoT**\nDesign energy-efficient wireless sensor networks using WE components.\n\nAll three come with full lab access and mentoring. Want me to help you prepare an application?`;
-    } else if (lowerMsg.includes('skill') || lowerMsg.includes('develop')) {
-      response = `Here's a personalized skill gap analysis for your target career path:\n\n` +
-        `✅ **Strong in:** ${user?.skills?.slice(0, 3).join(', ')}\n\n` +
-        `🔄 **Should strengthen:**\n- RTOS Programming — Take the "Embedded Systems" quiz\n- PCB Design for EMC — Try the "EMC & Signal Integrity" quiz\n- Power Supply Design — Complete the "Power Electronics" quiz\n\n` +
-        `📈 **Recommended learning path:**\n1. Complete 2 skill quizzes this week (+20 pts)\n2. Join the #embedded-systems channel for daily tips\n3. Sign up for the KiCad Workshop on Aug 5\n4. Request mentoring from Dr. Thomas Brander (95% match)\n\nShall I help you get started with any of these?`;
-    } else if (lowerMsg.includes('cv') || lowerMsg.includes('resume')) {
-      response = `Here's a CV review checklist tailored for engineering roles at WE:\n\n` +
-        `✅ **Contact info & LinkedIn** — Make sure your WE-Connect profile badge is linked\n` +
-        `✅ **Education** — Include relevant coursework and GPA\n` +
-        `✅ **Technical skills** — List specific tools (Altium, KiCad, MATLAB, etc.)\n` +
-        `⚠️ **Projects** — Add your community contributions and quiz badges\n` +
-        `⚠️ **Experience** — Quantify achievements (e.g., "Reduced power consumption by 30%")\n` +
-        `❌ **Cover letter** — Customize for each position, mention WE products you've used\n\n` +
-        `💡 **Pro tip:** Your WE-Connect badges (${earnedBadges.length} earned!) can be added to your CV as verified certifications.`;
-    } else if (lowerMsg.includes('interview') || lowerMsg.includes('prepare')) {
-      response = `Here are common interview questions for engineering roles at WE:\n\n` +
-        `🎯 **Technical:**\n- Explain how a buck converter works and key design considerations\n- How would you approach EMC issues in a PCB design?\n- Describe a challenging embedded project and how you solved it\n\n` +
-        `💼 **Behavioral:**\n- Tell us about a team project where you faced disagreements\n- How do you stay current with new technologies?\n- Why Würth Elektronik specifically?\n\n` +
-        `💡 **Tips:**\n- Mention WE components you've used in projects\n- Reference your WE-Connect profile and badges\n- Ask about their R&D roadmap and team culture\n\nWant me to do a mock interview for a specific role?`;
-    } else {
-      response = `That's a great question! Here are some things I can help you with:\n\n` +
-        `🎯 **Career exploration** — Find the right path at WE\n` +
-        `📝 **Thesis guidance** — Match with topics and prepare applications\n` +
-        `📈 **Skill development** — Personalized learning path\n` +
-        `📄 **CV optimization** — Review checklist and tips\n` +
-        `🎤 **Interview prep** — Practice questions and strategies\n\nJust ask me about any of these!`;
-    }
-
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, { role: 'bot', text: response }]);
-      setIsTyping(false);
-    }, 1200);
+  const handleNewChat = () => {
+    resetConversation();
+    setChatMessages([
+      { role: 'bot', text: `Fresh start! 👋 What would you like to explore?\n\n🔌 Components & products\n🎯 Career paths\n📝 Thesis topics\n📈 Skill development` }
+    ]);
+    setError(null);
   };
 
-  const sendMessage = (text) => {
+  const sendMessage = async (text) => {
     const msg = text || inputText;
-    if (!msg.trim()) return;
+    if (!msg.trim() || isLoading) return;
+
     setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
     setInputText('');
-    simulateResponse(msg);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (!isGeminiConfigured()) throw new Error('API key not configured');
+
+      const aiResponse = await sendToGemini(msg, {
+        name: user?.name,
+        program: user?.program,
+        university: user?.university,
+        interests: user?.interests,
+        skills: user?.skills,
+      });
+
+      setChatMessages(prev => [...prev, { role: 'bot', text: aiResponse }]);
+    } catch (err) {
+      console.error('Gemini error:', err);
+
+      // Fallback to local product search
+      let fallbackResponse;
+      if (isProductQuery(msg)) {
+        const productResult = generateProductResponse(msg);
+        fallbackResponse = `*Note: The AI service is currently busy (${err.message}). Falling back to local catalog search:*\n\n${productResult}`;
+      } else {
+        fallbackResponse = `I'm having trouble connecting to the AI service right now. Here are some things you can try:\n\n` +
+          `🔌 Ask me about **components** — "What inductor for a buck converter?"\n` +
+          `🎯 Ask about **career paths** — "Explore careers at Würth Elektronik"\n` +
+          `📝 Ask about **thesis topics** — "Help me choose a thesis topic"\n\n` +
+          `*Error: ${err.message}*`;
+      }
+      setChatMessages(prev => [...prev, { role: 'bot', text: fallbackResponse }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <motion.div className="animate-fade-in" initial="hidden" animate="show" variants={staggerContainer}>
       <motion.div className="page-header" variants={fadeUpVariant}>
-        <h1>My Journey</h1>
-        <p>Track your progress and get AI-powered career guidance.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1>My Journey</h1>
+            <p>Track your progress and get AI-powered career guidance.</p>
+          </div>
+          {/* Gemini badge */}
+          <div className="gemini-badge">
+            <Sparkles size={13} />
+            Gemini 2.5
+          </div>
+        </div>
       </motion.div>
 
       <motion.div className="tabs" variants={fadeUpVariant}>
@@ -124,6 +167,25 @@ export default function Journey() {
 
       {activeTab === 'companion' ? (
         <motion.div className="ai-chat-container" variants={fadeUpVariant} key="companion">
+          {/* Chat header */}
+          <div className="ai-chat-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div className="ai-avatar">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <strong>AI Career & Product Companion</strong>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--we-gray-400)' }}>
+                  Powered by Gemini 2.5 · Google Search Grounding
+                </div>
+              </div>
+            </div>
+            <button className="btn btn-ghost" onClick={handleNewChat} title="New Chat" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <RefreshCw size={16} />
+              <span style={{ fontSize: 'var(--text-sm)' }}>New Chat</span>
+            </button>
+          </div>
+
           <div className="ai-chat-messages">
             <AnimatePresence initial={false}>
               {chatMessages.map((msg, i) => (
@@ -135,11 +197,11 @@ export default function Journey() {
                 >
                 {msg.role === 'bot' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
-                    <Sparkles size={14} style={{ color: 'var(--we-rot)' }} />
-                    <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--we-rot)' }}>AI Career Companion</span>
+                    <Sparkles size={13} style={{ color: 'var(--we-rot)' }} />
+                    <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--we-rot)' }}>AI Companion</span>
                   </div>
                 )}
-                <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text.split('**').map((part, j) => j % 2 === 1 ? <strong key={j}>{part}</strong> : part)}</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{renderMarkdown(msg.text)}</div>
                 {msg.role === 'bot' && i === 0 && (
                   <div className="ai-quick-replies">
                     {quickReplies.map(qr => (
@@ -151,13 +213,19 @@ export default function Journey() {
                 )}
                 </motion.div>
               ))}
-              {isTyping && (
+
+              {/* Loading indicator */}
+              {isLoading && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="ai-message bot">
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <span style={{ animation: 'pulse 1s infinite', animationDelay: '0s' }}>●</span>
-                  <span style={{ animation: 'pulse 1s infinite', animationDelay: '0.2s' }}>●</span>
-                  <span style={{ animation: 'pulse 1s infinite', animationDelay: '0.4s' }}>●</span>
-                </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                    <Sparkles size={13} style={{ color: 'var(--we-rot)' }} />
+                    <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--we-rot)' }}>AI Companion</span>
+                  </div>
+                  <div className="ai-thinking">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -168,13 +236,14 @@ export default function Journey() {
             <div className="chat-input-wrapper">
               <textarea
                 className="chat-input"
-                placeholder="Ask me about career paths, thesis topics, skills, or interview prep..."
+                placeholder="Ask about components, career paths, thesis topics, or anything..."
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                 rows={1}
+                disabled={isLoading}
               />
-              <button className="btn btn-primary btn-icon" onClick={() => sendMessage()} disabled={!inputText.trim()}>
+              <button className="btn btn-primary btn-icon" onClick={() => sendMessage()} disabled={!inputText.trim() || isLoading}>
                 <Send size={18} />
               </button>
             </div>

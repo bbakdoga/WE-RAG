@@ -1,0 +1,64 @@
+# WE-Connect | Würth Elektronik Student Platform
+
+> WE-Connect is the official student engagement platform by Würth Elektronik — a leading manufacturer of electronic and electromechanical components, circuit boards, and intelligent power & control systems.
+
+## About WE-Connect
+
+WE-Connect connects engineering students with Würth Elektronik through internships, thesis opportunities, mentoring, skill development, and community engagement. Students can discover electronic components, learn about their applications, and access free component kits for university projects.
+
+## Products & Components
+
+Würth Elektronik manufactures a comprehensive range of electronic components. Students can browse and learn about these product families on WE-Connect:
+
+### Inductors & Chokes
+Power inductors (WE-MAPI, WE-PD, WE-HCI), common mode chokes, and RF inductors for DC-DC converters, EMC filtering, and energy storage applications.
+→ Browse: https://www.we-online.com/en/components/products/inductors
+
+### Capacitors
+Ceramic (MLCC), polymer aluminum, electrolytic, and film capacitors for decoupling, filtering, and energy storage.
+→ Browse: https://www.we-online.com/en/components/products/capacitors
+
+### EMC Components
+Ferrite beads (WE-CBF), TVS diodes, EMC line filters, and shielding solutions for electromagnetic compatibility.
+→ Browse: https://www.we-online.com/en/components/products/emc-components
+
+### Connectors
+Pin headers, USB connectors (Type-A/B/C), terminal blocks, and wire-to-board connectors for PCB design.
+→ Browse: https://www.we-online.com/en/components/products/connectors
+
+### LEDs & Optoelectronics
+SMD LEDs, high-power LEDs, LED driver modules (MagI³C), and optocouplers for lighting and indication.
+→ Browse: https://www.we-online.com/en/components/products/optoelectronics
+
+### Transformers
+Offline transformers, gate drive transformers, pulse transformers, and LAN/Ethernet transformers for power conversion and isolation.
+→ Browse: https://www.we-online.com/en/components/products/transformers
+
+### Power Modules (MagI³C)
+Integrated DC-DC converter modules with built-in inductor and IC. Step-down (buck) and step-up (boost) modules for easy power supply design.
+→ Browse: https://www.we-online.com/en/components/products/power-modules
+
+### Sensors & Wireless
+Current sensors, wireless charging coils (Qi/WPC), NFC/RFID antennas, and Bluetooth/WiFi antennas for IoT and sensing applications.
+→ Browse: https://www.we-online.com/en/components/products/wireless-connectivity
+
+## Student Opportunities
+
+- Internships (3-6 months) in R&D, EMC lab, design center
+- Master/Bachelor thesis topics with full lab access
+- Working student positions (10-20 hrs/week)
+- Excellence Scholarship (€500/month + mentoring)
+- International Trainee Program (18 months, multi-country)
+- Free component kits for university projects
+- Mentoring with senior engineers
+- Career starter positions
+
+## Design Tools
+
+- WE-REDEXPERT: Free online simulation tool for component selection and AC loss analysis
+  → https://www.we-online.com/en/toolbox/redexpert
+
+## Contact
+
+- Website: https://www.we-online.com
+- Student Platform: WE-Connect
